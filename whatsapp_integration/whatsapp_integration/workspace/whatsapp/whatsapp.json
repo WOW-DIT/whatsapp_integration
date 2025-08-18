@@ -1,0 +1,44 @@
+{
+ "charts": [],
+ "content": "[{\"id\":\"CISV_bm6Dv\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">WhatsApp</span>\",\"col\":12}},{\"id\":\"ExS6-AcBYb\",\"type\":\"quick_list\",\"data\":{\"quick_list_name\":\"WhatsApp Instance\",\"col\":6}},{\"id\":\"5cZdc2_P0b\",\"type\":\"quick_list\",\"data\":{\"quick_list_name\":\"Ai Agents\",\"col\":6}},{\"id\":\"JZ781188iD\",\"type\":\"quick_list\",\"data\":{\"quick_list_name\":\"Chats\",\"col\":12}}]",
+ "creation": "2025-07-27 16:21:25.626214",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "message-1",
+ "idx": 0,
+ "is_hidden": 0,
+ "label": "WhatsApp",
+ "links": [],
+ "modified": "2025-07-27 16:34:29.989816",
+ "modified_by": "Administrator",
+ "module": "WhatsApp Integration",
+ "name": "WhatsApp",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [
+  {
+   "document_type": "WhatsApp Instance",
+   "label": "WhatsApp Instance",
+   "quick_list_filter": "[]"
+  },
+  {
+   "document_type": "Ai Chat",
+   "label": "Chats",
+   "quick_list_filter": "[]"
+  },
+  {
+   "document_type": "Message Context Template",
+   "label": "Ai Agents",
+   "quick_list_filter": "[]"
+  }
+ ],
+ "roles": [],
+ "sequence_id": 37.0,
+ "shortcuts": [],
+ "title": "WhatsApp"
+}
