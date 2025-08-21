@@ -8,6 +8,7 @@
  "engine": "InnoDB",
  "field_order": [
   "user",
+  "enabled",
   "whatsapp_info_section",
   "phone_id",
   "column_break_0ioim",
@@ -17,7 +18,7 @@
   "token",
   "column_break_4kpok",
   "app_secret",
-  "enabled",
+  "error_message",
   "section_break_ligjo",
   "webhook_configuration"
  ],
@@ -96,11 +97,16 @@
    "fieldtype": "Text",
    "label": "Token",
    "reqd": 1
+  },
+  {
+   "fieldname": "error_message",
+   "fieldtype": "Text",
+   "label": "Error Message"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-08-13 15:57:35.649508",
+ "modified": "2025-08-19 13:08:12.957503",
  "modified_by": "Administrator",
  "module": "WhatsApp Integration",
  "name": "WhatsApp Instance",

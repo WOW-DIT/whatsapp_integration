@@ -1,0 +1,95 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-08-19 10:52:21.737853",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "api_version",
+  "enabled",
+  "column_break_bsofo",
+  "pricing_section",
+  "standard_price",
+  "ai_price",
+  "ai_plus_price",
+  "column_break_iumkp",
+  "chat_charge_length",
+  "chat_length_cap"
+ ],
+ "fields": [
+  {
+   "fieldname": "standard_price",
+   "fieldtype": "Currency",
+   "label": "Standard Price"
+  },
+  {
+   "fieldname": "ai_price",
+   "fieldtype": "Currency",
+   "label": "Ai Price"
+  },
+  {
+   "fieldname": "ai_plus_price",
+   "fieldtype": "Currency",
+   "label": "Ai Plus Price"
+  },
+  {
+   "fieldname": "chat_charge_length",
+   "fieldtype": "Int",
+   "label": "Chat Charge Length"
+  },
+  {
+   "fieldname": "chat_length_cap",
+   "fieldtype": "Int",
+   "label": "Chat Length Cap"
+  },
+  {
+   "fieldname": "api_version",
+   "fieldtype": "Data",
+   "label": "API Version"
+  },
+  {
+   "default": "0",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Enabled"
+  },
+  {
+   "fieldname": "column_break_bsofo",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "pricing_section",
+   "fieldtype": "Section Break",
+   "label": "Pricing"
+  },
+  {
+   "fieldname": "column_break_iumkp",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2025-08-19 11:46:48.244761",
+ "modified_by": "Administrator",
+ "module": "WhatsApp Integration",
+ "name": "WhatsApp Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

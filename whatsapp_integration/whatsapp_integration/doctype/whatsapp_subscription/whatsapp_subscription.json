@@ -1,0 +1,103 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-08-19 10:40:22.185872",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "user",
+  "enabled",
+  "column_break_4kpok",
+  "balance",
+  "kpis_section",
+  "total_messages",
+  "total_responses",
+  "column_break_5qrin",
+  "total_customers",
+  "total_conversations"
+ ],
+ "fields": [
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "User",
+   "options": "User",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "column_break_4kpok",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "balance",
+   "fieldtype": "Int",
+   "label": "Balance",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Enabled"
+  },
+  {
+   "fieldname": "kpis_section",
+   "fieldtype": "Section Break",
+   "label": "Stats"
+  },
+  {
+   "fieldname": "total_messages",
+   "fieldtype": "Int",
+   "label": "Total Messages"
+  },
+  {
+   "fieldname": "total_responses",
+   "fieldtype": "Int",
+   "label": "Total Responses"
+  },
+  {
+   "fieldname": "column_break_5qrin",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_customers",
+   "fieldtype": "Int",
+   "label": "Total Customers"
+  },
+  {
+   "fieldname": "total_conversations",
+   "fieldtype": "Int",
+   "label": "Total Conversations"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-08-19 13:46:17.200677",
+ "modified_by": "Administrator",
+ "module": "WhatsApp Integration",
+ "name": "WhatsApp Subscription",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "show_title_field_in_link": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "user"
+}

@@ -23,7 +23,6 @@ def whatsapp_webhook():
             return Response(str(challenge), mimetype='text/plain')
         
     else:
-        frappe.db.commit()
         try:
             import json
             raw_data = frappe.request.get_data(as_text=True)
@@ -31,80 +30,136 @@ def whatsapp_webhook():
 
             entry = json_data["entry"][0]
             business_id = entry["id"]
-            phone_id = entry["changes"][0]["value"]["metadata"]["phone_number_id"]
-            messages = entry["changes"][0]["value"]["messages"]
-
-            wa_instances = frappe.get_all(
-                "WhatsApp Instance",
-                filters={"business_id": business_id, "enabled": 1},
-                fields=["name", "business_id", "phone_id", "app_secret", "token"]
-            )
-
-            if not wa_instances:
-                frappe.throw("Business user is not subscribed")
-
-            wa_instance = wa_instances[0]
-            token = wa_instance.token
-                
-            for msg in messages:
-                to_number = entry["changes"][0]["value"]["contacts"][0]["wa_id"]
-                from_number = msg["from"]
-                timestamp = datetime.fromtimestamp(float(msg["timestamp"]))
-                msg_body = msg["text"]["body"]
-
-                log = frappe.new_doc("WhatsApp Logs")
-                log.from_number = from_number
-                log.to_number = to_number
-                log.method = "Received"
-                log.timestamp = timestamp
-                log.body = msg_body
-                log.save(ignore_permissions=True)
-
+            value = entry["changes"][0]["value"]
+            phone_id = value["metadata"]["phone_number_id"]
+            messages = value.get("messages")
+            
+            if messages:
+                from_number = messages[0]["from"]
+                to_number = value["contacts"][0]["wa_id"]
                 try:
-                    ai_response = respond_to_message(
-                        business_id,
-                        from_number,
-                        msg_body,
+                    wa_settings = frappe.get_doc("WhatsApp Settings", "WhatsApp Settings")
+                    wa_instances = frappe.get_all(
+                        "WhatsApp Instance",
+                        filters={"business_id": business_id, "enabled": 1},
+                        fields=[
+                            "name", "user", "business_id",
+                            "phone_id", "app_secret", "token",
+                            "error_message",
+                        ]
                     )
 
-                    if ai_response:
-                        save_response_log(
-                            ai_response,
-                            from_number,
-                            to_number,
-                        )
-                    wa_message = send_whatsapp_response(
-                        phone_id=phone_id,
-                        token=token,
-                        to_number=to_number,
-                        text=ai_response,
-                    )
+                    if not wa_instances:
+                        frappe.throw("Business user is not subscribed")
+
+                    wa_instance = wa_instances[0]
+                    user = wa_instance.user
+                    token = wa_instance.token
+
+                    client_subscription = get_sub(user)
+                    if client_subscription is None:
+                        error_message = str(wa_instance.error_message).strip() if wa_instance.error_message else ""
+                        if error_message:
+                            raise Exception(error_message)
+                        else:
+                            return
+
+                    for msg in messages:
+                        from_number = msg["from"]
+                        timestamp = datetime.fromtimestamp(float(msg["timestamp"]))
+                        msg_body = msg["text"]["body"]
+
+                        log = frappe.new_doc("WhatsApp Logs")
+                        log.from_number = from_number
+                        log.to_number = to_number
+                        log.method = "Received"
+                        log.timestamp = timestamp
+                        log.body = msg_body
+                        log.save(ignore_permissions=True)
+
+                        try:
+                            ai_response = respond_to_message(
+                                business_id,
+                                from_number,
+                                msg_body,
+                            )
+
+                            if ai_response:
+                                save_response_log(
+                                    ai_response,
+                                    from_number,
+                                    to_number,
+                                )
+                                wa_message = send_whatsapp_response(
+                                    phone_id=phone_id,
+                                    token=token,
+                                    to_number=to_number,
+                                    text=ai_response,
+                                    version=wa_settings.api_version,
+                                )
+
+                        except Exception as e:
+                            save_response_log(
+                                f"ERROR: {e}",
+                                from_number,
+                                to_number,
+                                True,
+                            )
+
+                            wa_message = send_whatsapp_response(
+                                phone_id=phone_id,
+                                token=token,
+                                to_number=to_number,
+                                text=str(e),
+                                version=wa_settings.api_version,
+                            )
+                    
+                            frappe.db.commit()
+
+                    frappe.db.commit()
+                        
+                    return {"status": "success", "message": "Webhook received", "content": json_data}
 
                 except Exception as e:
-                    save_response_log(
-                        f"ERROR::::: {e}",
-                        from_number,
-                        to_number,
-                    )
-
-                    wa_message = send_whatsapp_response(
+                    send_whatsapp_response(
                         phone_id=phone_id,
                         token=token,
                         to_number=to_number,
                         text=str(e),
+                        version=wa_settings.api_version,
                     )
-            
-                    frappe.db.commit()
-
-            frappe.db.commit()
+                    return None
                 
 
-            # optional: respond with a message
-            return {"status": "success", "message": "Webhook received", "content": json_data}
         except Exception as e:
-            log = frappe.new_doc("WhatsApp Logs")
-            log.body = str(e)
-            log.save(ignore_permissions=True)
+            save_response_log(
+                str(e),
+                "--------",
+                "--------",
+                True,
+            )
+            return None
+
+
+def get_sub(user):
+    try:
+        # today = datetime.now().date()
+        # today_str = today.strftime("%Y-%m-%d")
+
+        subs = frappe.get_all(
+            "WhatsApp Subscription",
+            filters={"user": user, "enabled": 1},
+            fields=["name"],
+            limit=1,
+        )
+        if subs:
+            sub = frappe.get_doc("WhatsApp Subscription", subs[0].name)
+            return sub
+        
+        return None
+    except:
+        return None
+
 
 def respond_to_message(business_id, from_number, text):
     ai_contexts = frappe.get_all(
@@ -131,7 +186,8 @@ def respond_to_message(business_id, from_number, text):
             "role": "user",
             "content": f"({from_number}) says: {text}",
         },
-    ) 
+    )
+    
     return ai_response
 
 
@@ -163,8 +219,9 @@ def get_chat(business_id, from_number, ai_context):
     return chat
 
 
-def send_whatsapp_response(phone_id, token, to_number, text):
-    url = f"https://graph.facebook.com/v22.0/{phone_id}/messages"
+
+def send_whatsapp_response(phone_id, token, to_number, text, version):
+    url = f"https://graph.facebook.com/{version}/{phone_id}/messages"
     body = {
         "messaging_product": "whatsapp",
         "recipient_type": "individual",
@@ -181,31 +238,18 @@ def send_whatsapp_response(phone_id, token, to_number, text):
 
     save_response_log(
         str(response.json()),
-        "6666666666666666666666666666666666666666666666666666666666666",
+        "assistant",
         to_number,
+        response.status_code == 200,
     )
 
 
-def post_to_webhook(context):
-    url = context.webhook_uri
-    payload = json.loads(context.json_template)
-    headers = {}
-
-    if context.auth_token:
-        headers["Authorization"] = context.auth_token
-
-    tries = 3
-    while tries > 0:
-        response = requests.post(url=url, json=payload, headers=headers, timeout=15)
-        if response.status_code != 200:
-            tries -= 1
-
-
-def save_response_log(body, from_number, to_number):
+def save_response_log(body, from_number, to_number, is_error=False):
     log = frappe.new_doc("WhatsApp Logs")
     log.from_number = from_number
     log.to_number = to_number
     log.method = "Sent"
     log.timestamp = datetime.now()
     log.body = body
+    log.is_error = is_error
     log.save(ignore_permissions=True)

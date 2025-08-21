@@ -13,6 +13,7 @@
   "to_number",
   "timestamp",
   "section_break_gbl1s",
+  "is_error",
   "body"
  ],
  "fields": [
@@ -54,11 +55,17 @@
   {
    "fieldname": "section_break_gbl1s",
    "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_error",
+   "fieldtype": "Check",
+   "label": "Is Error"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-08-14 16:49:12.525451",
+ "modified": "2025-08-21 11:26:50.113663",
  "modified_by": "Administrator",
  "module": "WhatsApp Integration",
  "name": "WhatsApp Logs",
