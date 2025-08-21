@@ -81,6 +81,7 @@ def whatsapp_webhook():
                             ai_response = respond_to_message(
                                 business_id,
                                 from_number,
+                                to_number,
                                 msg_body,
                             )
 
@@ -161,11 +162,11 @@ def get_sub(user):
         return None
 
 
-def respond_to_message(business_id, from_number, text):
+def respond_to_message(business_id, from_number, to_number, text):
     ai_contexts = frappe.get_all(
         "Message Context Template",
         filters={"whatsapp_business_id": business_id},
-        fields=["name", "llm", "gpt_model", "override_model"]
+        fields=["name", "llm", "default_model", "gpt_model", "override_model"]
     )
 
     if not ai_contexts:
@@ -173,6 +174,11 @@ def respond_to_message(business_id, from_number, text):
 
     ai_context = ai_contexts[0]
 
+    save_response_log(
+        str(ai_context.default_model),
+        "hhhhhhhhhh",
+        "hhhhhhhhhh",
+    )
     chat = get_chat(
         business_id,
         from_number,
@@ -186,6 +192,8 @@ def respond_to_message(business_id, from_number, text):
             "role": "user",
             "content": f"({from_number}) says: {text}",
         },
+        to_number=to_number,
+        stream=False,
     )
     
     return ai_response
@@ -207,8 +215,11 @@ def get_chat(business_id, from_number, ai_context):
         chat = frappe.new_doc("Ai Chat")
         if ai_context.override_model == 1:
             chat.model = ai_context.gpt_model
+        elif ai_context.default_model == 1:
+            chat.model = "gpt-oss:120b"
         else:
             chat.model = ai_context.llm
+
         chat.context = ai_context.name
         chat.whatsapp_business_id = business_id
         chat.whatsapp_client_id = from_number
