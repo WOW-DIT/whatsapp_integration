@@ -10,13 +10,24 @@
   "api_version",
   "enabled",
   "column_break_bsofo",
+  "time_to_live",
+  "auth_section",
+  "app_id",
+  "verify_token",
+  "column_break_k0h3y",
+  "app_secret",
+  "config_id",
   "pricing_section",
   "standard_price",
   "ai_price",
   "ai_plus_price",
   "column_break_iumkp",
   "chat_charge_length",
-  "chat_length_cap"
+  "chat_length_cap",
+  "speech_to_text_tab",
+  "allow_stt",
+  "stt_model",
+  "stt_error_message"
  ],
  "fields": [
   {
@@ -67,12 +78,68 @@
   {
    "fieldname": "column_break_iumkp",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "app_id",
+   "fieldtype": "Data",
+   "label": "App ID"
+  },
+  {
+   "fieldname": "app_secret",
+   "fieldtype": "Password",
+   "label": "App Secret"
+  },
+  {
+   "fieldname": "auth_section",
+   "fieldtype": "Section Break",
+   "label": "Auth"
+  },
+  {
+   "fieldname": "verify_token",
+   "fieldtype": "Data",
+   "label": "Verify Token"
+  },
+  {
+   "fieldname": "column_break_k0h3y",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "config_id",
+   "fieldtype": "Data",
+   "label": "Config ID"
+  },
+  {
+   "fieldname": "speech_to_text_tab",
+   "fieldtype": "Tab Break",
+   "label": "Speech To Text"
+  },
+  {
+   "default": "0",
+   "fieldname": "allow_stt",
+   "fieldtype": "Check",
+   "label": "Allow STT"
+  },
+  {
+   "fieldname": "stt_model",
+   "fieldtype": "Data",
+   "label": "STT Model",
+   "mandatory_depends_on": "eval: doc.allow_stt === 1"
+  },
+  {
+   "fieldname": "stt_error_message",
+   "fieldtype": "Text",
+   "label": "STT Error Message"
+  },
+  {
+   "fieldname": "time_to_live",
+   "fieldtype": "Int",
+   "label": "Time To Live (Seconds)"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-08-19 11:46:48.244761",
+ "modified": "2025-09-01 16:33:57.669946",
  "modified_by": "Administrator",
  "module": "WhatsApp Integration",
  "name": "WhatsApp Settings",

@@ -1,8 +1,9 @@
 # Copyright (c) 2025, Mosaab Bleik and Contributors
 # See license.txt
 
-#import frappe
+# import frappe
 from frappe.tests.utils import FrappeTestCase
 
-class TestWhatsAppInstance(FrappeTestCase):
+
+class TestWhatsAppBroadcastMessage(FrappeTestCase):
 	pass

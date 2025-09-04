@@ -1,0 +1,76 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-08-28 16:49:55.766080",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "user",
+  "phone_id",
+  "business_id",
+  "token",
+  "button_html"
+ ],
+ "fields": [
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "User",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fieldname": "phone_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Phone ID",
+   "reqd": 1
+  },
+  {
+   "fieldname": "business_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Business ID",
+   "reqd": 1
+  },
+  {
+   "fieldname": "token",
+   "fieldtype": "Text",
+   "in_list_view": 1,
+   "label": "Token",
+   "reqd": 1
+  },
+  {
+   "fieldname": "button_html",
+   "fieldtype": "HTML",
+   "label": "Button HTML"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-08-28 16:55:25.699306",
+ "modified_by": "Administrator",
+ "module": "WhatsApp Integration",
+ "name": "WhatsApp Signup",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

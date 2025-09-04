@@ -1,0 +1,199 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-09-01 14:45:45.755465",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "instance",
+  "column_break_mmza4",
+  "status",
+  "section_break_cff5j",
+  "template_id",
+  "template_name",
+  "column_break_jnwu3",
+  "category",
+  "language",
+  "parameter_format",
+  "header_section",
+  "header_format",
+  "header_text",
+  "header_examples",
+  "header_example_file",
+  "document_handle_id",
+  "body_tab",
+  "body",
+  "body_examples",
+  "footer_tab",
+  "footer",
+  "log_section",
+  "log"
+ ],
+ "fields": [
+  {
+   "fieldname": "template_name",
+   "fieldtype": "Data",
+   "label": "Template Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "category",
+   "fieldtype": "Select",
+   "label": "Category",
+   "options": "\nUTILITY\nMARKETING\nAUTHENTICATION",
+   "reqd": 1
+  },
+  {
+   "fieldname": "language",
+   "fieldtype": "Select",
+   "label": "language",
+   "options": "\nen_US\nar_AE",
+   "reqd": 1
+  },
+  {
+   "fieldname": "parameter_format",
+   "fieldtype": "Select",
+   "label": "Parameter Format",
+   "options": "POSITIONAL"
+  },
+  {
+   "fieldname": "instance",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Instance",
+   "options": "WhatsApp Instance",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_cff5j",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_mmza4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "header_section",
+   "fieldtype": "Tab Break",
+   "label": "Header"
+  },
+  {
+   "fieldname": "header_format",
+   "fieldtype": "Select",
+   "label": "Header Format",
+   "options": "\nTEXT\nDOCUMENT\nIMAGE\nVIDEO",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval: doc.header_format === \"TEXT\"",
+   "fieldname": "header_text",
+   "fieldtype": "Text",
+   "label": "Header Text",
+   "mandatory_depends_on": "eval: doc.header_format === \"TEXT\""
+  },
+  {
+   "depends_on": "eval: doc.header_format !== \"TEXT\"",
+   "fieldname": "header_example_file",
+   "fieldtype": "Attach",
+   "label": "Header Example File",
+   "mandatory_depends_on": "eval: doc.header_format !== \"TEXT\""
+  },
+  {
+   "fieldname": "log_section",
+   "fieldtype": "Tab Break",
+   "label": "Log"
+  },
+  {
+   "fieldname": "log",
+   "fieldtype": "Long Text",
+   "label": "Log"
+  },
+  {
+   "default": "NEW",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "NEW\nPENDING\nAPPROVED\nREJECTED",
+   "read_only": 1
+  },
+  {
+   "fieldname": "template_id",
+   "fieldtype": "Data",
+   "label": "Template ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "body_tab",
+   "fieldtype": "Tab Break",
+   "label": "Body"
+  },
+  {
+   "fieldname": "body",
+   "fieldtype": "Text",
+   "label": "Body",
+   "reqd": 1
+  },
+  {
+   "fieldname": "footer_tab",
+   "fieldtype": "Tab Break",
+   "label": "Footer"
+  },
+  {
+   "fieldname": "footer",
+   "fieldtype": "Text",
+   "label": "Footer"
+  },
+  {
+   "fieldname": "column_break_jnwu3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval: doc.header_format !== \"TEXT\"",
+   "fieldname": "document_handle_id",
+   "fieldtype": "Text",
+   "label": "Document Handle ID",
+   "read_only": 1
+  },
+  {
+   "description": "Examples are to replace the parameters (placeholders) for testing purposes.\n\n\nNOTE: Use ( | ) between each example.",
+   "fieldname": "body_examples",
+   "fieldtype": "Text",
+   "label": "Body Examples",
+   "mandatory_depends_on": "eval: /{{\\d+}}/.test(doc.body)"
+  },
+  {
+   "depends_on": "eval: doc.header_format === \"TEXT\"",
+   "description": "Examples are to replace the parameters (placeholders) for testing purposes.\n\nNOTE: Use ( | ) between each example.",
+   "fieldname": "header_examples",
+   "fieldtype": "Text",
+   "label": "Header Examples",
+   "mandatory_depends_on": "eval: doc.header_format === \"TEXT\" && /{{\\d+}}/.test(doc.header_text)"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-09-03 10:12:12.601405",
+ "modified_by": "Administrator",
+ "module": "WhatsApp Integration",
+ "name": "WhatsApp Message Template",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

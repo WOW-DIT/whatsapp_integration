@@ -1,0 +1,74 @@
+{
+ "charts": [
+  {
+   "chart_name": "WhatsApp Inbound Messages",
+   "label": "Inbound Messages"
+  },
+  {
+   "chart_name": "WhatsApp Chats",
+   "label": "Customers"
+  },
+  {
+   "chart_name": "WhatsApp Outbound Messages",
+   "label": "Outbound Messages"
+  }
+ ],
+ "content": "[{\"id\":\"zRvsAnpKyj\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Today</span>\",\"col\":12}},{\"id\":\"KfvO7047dp\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Conversations\",\"col\":4}},{\"id\":\"u7UGf5pHpp\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Messages\",\"col\":4}},{\"id\":\"cLC0j1tTWD\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Responses\",\"col\":4}},{\"id\":\"kwM-YHkRQq\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"New Customers\",\"col\":4}},{\"id\":\"vqUqmEhXp6\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Unanswered Messages\",\"col\":4}},{\"id\":\"DjmZXlls0G\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"h1pk0SgAIk\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Summary</b></span>\",\"col\":12}},{\"id\":\"Nf0aGlZSTd\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Conversations\",\"col\":4}},{\"id\":\"3AkPGiyoHA\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Messages\",\"col\":4}},{\"id\":\"TZRYzkk1Uq\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Responses\",\"col\":4}},{\"id\":\"PpO-DR_EMT\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Customers\",\"col\":12}},{\"id\":\"lsQZHckb4M\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Inbound Messages\",\"col\":6}},{\"id\":\"1XHKxEH-u8\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Outbound Messages\",\"col\":6}}]",
+ "creation": "2025-08-24 11:55:36.017334",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "chart",
+ "idx": 0,
+ "is_hidden": 0,
+ "label": "WA Dashboard",
+ "links": [],
+ "modified": "2025-08-26 15:17:38.223078",
+ "modified_by": "Administrator",
+ "module": "WhatsApp Integration",
+ "name": "WA Dashboard",
+ "number_cards": [
+  {
+   "label": "Unanswered Messages",
+   "number_card_name": "No Response Messages"
+  },
+  {
+   "label": "Conversations",
+   "number_card_name": "Number of Conversations"
+  },
+  {
+   "label": "Total Messages",
+   "number_card_name": "Number of Messages (All)"
+  },
+  {
+   "label": "New Customers",
+   "number_card_name": "New WhatsApp Customers"
+  },
+  {
+   "label": "Responses",
+   "number_card_name": "Number of Responses"
+  },
+  {
+   "label": "Total Conversations",
+   "number_card_name": "Number of Conversations (All)"
+  },
+  {
+   "label": "Messages",
+   "number_card_name": "Number of Messages"
+  },
+  {
+   "label": "Total Responses",
+   "number_card_name": "Number of Responses (All)"
+  }
+ ],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 7.0,
+ "shortcuts": [],
+ "title": "WA Dashboard"
+}
