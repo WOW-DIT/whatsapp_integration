@@ -58,7 +58,9 @@
   {
    "fieldname": "api_version",
    "fieldtype": "Data",
-   "label": "API Version"
+   "in_list_view": 1,
+   "label": "API Version",
+   "reqd": 1
   },
   {
    "default": "0",
@@ -82,12 +84,16 @@
   {
    "fieldname": "app_id",
    "fieldtype": "Data",
-   "label": "App ID"
+   "in_list_view": 1,
+   "label": "App ID",
+   "reqd": 1
   },
   {
    "fieldname": "app_secret",
    "fieldtype": "Password",
-   "label": "App Secret"
+   "in_list_view": 1,
+   "label": "App Secret",
+   "reqd": 1
   },
   {
    "fieldname": "auth_section",
@@ -96,8 +102,10 @@
   },
   {
    "fieldname": "verify_token",
-   "fieldtype": "Data",
-   "label": "Verify Token"
+   "fieldtype": "Password",
+   "in_list_view": 1,
+   "label": "Verify Token",
+   "reqd": 1
   },
   {
    "fieldname": "column_break_k0h3y",
@@ -106,7 +114,8 @@
   {
    "fieldname": "config_id",
    "fieldtype": "Data",
-   "label": "Config ID"
+   "label": "Config ID",
+   "reqd": 1
   },
   {
    "fieldname": "speech_to_text_tab",
@@ -139,7 +148,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-09-01 16:33:57.669946",
+ "modified": "2025-09-09 11:29:23.285229",
  "modified_by": "Administrator",
  "module": "WhatsApp Integration",
  "name": "WhatsApp Settings",

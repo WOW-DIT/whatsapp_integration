@@ -9,6 +9,7 @@
  "field_order": [
   "user",
   "enabled",
+  "registered",
   "whatsapp_info_section",
   "phone_id",
   "column_break_0ioim",
@@ -101,11 +102,18 @@
    "fieldname": "error_message",
    "fieldtype": "Text",
    "label": "Error Message"
+  },
+  {
+   "default": "0",
+   "fieldname": "registered",
+   "fieldtype": "Check",
+   "label": "Registered",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-03 16:17:41.593692",
+ "modified": "2025-09-04 17:03:49.923243",
  "modified_by": "Administrator",
  "module": "WhatsApp Integration",
  "name": "WhatsApp Instance",

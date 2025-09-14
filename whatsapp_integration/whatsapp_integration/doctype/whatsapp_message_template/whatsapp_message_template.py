@@ -3,9 +3,8 @@
 
 import frappe
 from frappe.model.document import Document
-from frappe.utils import get_url
 import requests
-from whatsapp_integration.whatsapp_api import upload_media, get_mime_type, upload_file_full
+from whatsapp_integration.whatsapp_api import get_mime_type, upload_file_full
 import re
 
 class WhatsAppMessageTemplate(Document):
@@ -14,17 +13,42 @@ class WhatsAppMessageTemplate(Document):
 		self.validate_body_parameters()
 		self.sync_template()
 
+	def on_trash(self):
+		if self.template_id:
+			self.delete_template()
+
 	def validate_header_parameters(self):
 		if self.header_format == "TEXT":
 			template = self.header_text
 			compare_text = self.header_examples
 
+			if compare_text:
+				# 1. Find all placeholders like {{1}}, {{2}}
+				matches = re.findall(r"{{(\d+)}}", template)
+				
+				# 2. Check uniqueness
+				if len(matches) != len(set(matches)):
+					frappe.throw("Duplicate parameters found in 'Header'")
+				
+				# 3. Count placeholders
+				placeholder_count = len(matches)
+				
+				# 4. Count parts in compare_text
+				parts = compare_text.split("|")
+				if len(parts) != placeholder_count:
+					frappe.throw("Mismatch in number of parameters in 'Header'")
+			
+	def validate_body_parameters(self):
+		template = self.body
+		compare_text = self.body_examples
+
+		if compare_text:
 			# 1. Find all placeholders like {{1}}, {{2}}
 			matches = re.findall(r"{{(\d+)}}", template)
 			
 			# 2. Check uniqueness
 			if len(matches) != len(set(matches)):
-				frappe.throw("Duplicate parameters found in 'Header'")
+				frappe.throw("Duplicate parameters found in 'Body'")
 			
 			# 3. Count placeholders
 			placeholder_count = len(matches)
@@ -32,26 +56,7 @@ class WhatsAppMessageTemplate(Document):
 			# 4. Count parts in compare_text
 			parts = compare_text.split("|")
 			if len(parts) != placeholder_count:
-				frappe.throw("Mismatch in number of parameters in 'Header'")
-			
-	def validate_body_parameters(self):
-		template = self.body
-		compare_text = self.body_examples
-
-		# 1. Find all placeholders like {{1}}, {{2}}
-		matches = re.findall(r"{{(\d+)}}", template)
-		
-		# 2. Check uniqueness
-		if len(matches) != len(set(matches)):
-			frappe.throw("Duplicate parameters found in 'Body'")
-		
-		# 3. Count placeholders
-		placeholder_count = len(matches)
-		
-		# 4. Count parts in compare_text
-		parts = compare_text.split("|")
-		if len(parts) != placeholder_count:
-			frappe.throw("Mismatch in number of parameters in 'Body'")
+				frappe.throw("Mismatch in number of parameters in 'Body'")
 
 
 	def sync_template(self):
@@ -86,9 +91,9 @@ class WhatsAppMessageTemplate(Document):
 				if isinstance(error_msg, dict):
 
 					error_msg = error_msg.get("error", {}).get("message") or str(error_msg)
-				self.log = response
+				self.log = str(response)
 
-				frappe.msgprint(error_msg)
+				frappe.msgprint(str(response.get("message")))
 
 		except Exception as e:
 			frappe.throw(str(e))
@@ -101,10 +106,11 @@ class WhatsAppMessageTemplate(Document):
 		}
 		if self.header_format == "TEXT":
 			header["text"] = self.header_text
-			examples = [str(e).strip() for e in str(self.header_examples).split("|") if e.strip()]
-			header["example"] = {
-				"header_text": [examples]
-			}
+			examples = self.header_examples
+			if examples:
+				header["example"] = {
+					"header_text": [examples]
+				}
 		else:
 			# file_url = f"{get_url()}{self.header_example_file}"
 			
@@ -175,6 +181,7 @@ class WhatsAppMessageTemplate(Document):
 
 				self.template_id = data["id"]
 				self.status = data["status"]
+				self.category = data["category"]
 
 				frappe.msgprint("Template is created and being under review.\n Check the status later.")
 				return {"success": True, "message": response.json(), "body": str(body)}
@@ -187,19 +194,17 @@ class WhatsAppMessageTemplate(Document):
 
 	def update_template(self, api_version, token):
 		try:
+			url = f"https://graph.facebook.com/{api_version}/{self.template_id}"
 			body = {
-				"category": self.category,
+				# "category": self.category,
 				"components": self.components
 			}
-
 			headers = {
 				"Authorization": f"Bearer {token}"
 			}
-			
-			url = f"https://graph.facebook.com/{api_version}/{self.template_id}"
-			response = requests.post(url, json=body, headers=headers)
 
-			if response.status_code == 200:
+			response = requests.post(url, json=body, headers=headers)
+			if response.status_code == 200:		
 				data = response.json()
 
 				frappe.msgprint("Template is updated successfully.")
@@ -209,3 +214,29 @@ class WhatsAppMessageTemplate(Document):
 				return {"success": False, "message": response.json(), "body": str(body)}
 		except Exception as e:
 			return {"success": False, "message": str(e)}
+		
+	def delete_template(self):
+		try:
+			wa_settings = frappe.get_doc("WhatsApp Settings", "WhatsApp Settings")
+			instance = frappe.get_doc("WhatsApp Instance", self.instance)
+			
+			api_version = wa_settings.api_version
+			token = instance.get_password("token")
+			business_id = instance.business_id
+
+			url = f"https://graph.facebook.com/{api_version}/{business_id}/message_templates"
+			params = {
+				"hsm_id": self.template_id,
+				"name": self.template_name,
+			}
+			headers = {
+				"Authorization": f"Bearer {token}"
+			}
+
+			response = requests.delete(url, params=params, headers=headers)
+			if response.status_code != 200:		
+				frappe.throw(response.text)
+
+			
+		except Exception as e:
+			frappe.throw(str(e))

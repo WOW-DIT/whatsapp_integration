@@ -1,0 +1,83 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-09-14 10:32:02.532387",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "chat_id",
+  "client_name",
+  "column_break_wsk01",
+  "instance",
+  "client_number",
+  "section_break_ds43y",
+  "chat_html"
+ ],
+ "fields": [
+  {
+   "fieldname": "chat_id",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Chat ID",
+   "options": "Ai Chat",
+   "reqd": 1
+  },
+  {
+   "fieldname": "chat_html",
+   "fieldtype": "HTML",
+   "label": "Chat HTML"
+  },
+  {
+   "fieldname": "section_break_ds43y",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fetch_from": "chat_id.whatsapp_instance",
+   "fieldname": "instance",
+   "fieldtype": "Link",
+   "label": "Instance",
+   "options": "WhatsApp Instance",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_wsk01",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "client_name",
+   "fieldtype": "Data",
+   "label": "Client Name"
+  },
+  {
+   "fetch_from": "chat_id.whatsapp_client_id",
+   "fieldname": "client_number",
+   "fieldtype": "Data",
+   "label": "Client Number"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2025-09-14 17:23:57.300321",
+ "modified_by": "Administrator",
+ "module": "WhatsApp Integration",
+ "name": "WhatsApp Live Chat",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
