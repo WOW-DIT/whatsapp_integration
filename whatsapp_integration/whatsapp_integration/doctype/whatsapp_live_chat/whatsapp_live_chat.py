@@ -4,6 +4,8 @@
 import frappe
 from frappe.model.document import Document
 from whatsapp_integration.whatsapp_api import send_message
+from datetime import datetime, timedelta
+import json
 
 
 class WhatsAppLiveChat(Document):
@@ -36,8 +38,6 @@ def send_live_message(chat_id: str, message_type: str, text: str):
 		response = send_message(
 			phone_id=chat.phone_id,
 			client_number=chat.whatsapp_client_id,
-			chat_id=chat_id,
-			save_context=True,
 			type=message_type,
 			text=text,
 		)
@@ -50,12 +50,19 @@ def send_live_message(chat_id: str, message_type: str, text: str):
 			wam_id = message.get("id")
 			role = "assistant"
 
+			payload = {
+				"type": "question",
+				"response": text,
+				"client_number": client_number,
+			}
+
 			msg = frappe.new_doc("Ai Message")
 			msg.chat = chat_id
 			msg.type = "text"
 			msg.whatsapp_message_id = wam_id
 			msg.role = role
-			msg.content = f'{"type":"question","response":"{text}","client_number":"{client_number}"}'
+			
+			msg.content = json.dumps(payload, ensure_ascii=False)
 			msg.message_text = text
 			msg.insert(ignore_permissions=True)
 
@@ -65,14 +72,14 @@ def send_live_message(chat_id: str, message_type: str, text: str):
 			)
 			chat.save(ignore_permissions=True)
 
-			frappe.publish_realtime(
-				f"whatsapp_chat_{chat_id}",
-				message={"message": text, "sender": client_number, "role": role}
-			)
+			# frappe.publish_realtime(
+			# 	f"whatsapp_chat_{chat_id}",
+			# 	message={"message": text, "role": role, "timestamp": datetime.now()}
+			# )
 			
 			return {"success": success}
 		
 		return {"success": success, "error": str(response.text)}
 	
 	except Exception as e:
-		return {"success": success, "error": str(e)}
+		return {"success": False, "error": str(e)}

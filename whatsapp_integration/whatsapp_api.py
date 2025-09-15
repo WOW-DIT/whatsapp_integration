@@ -280,9 +280,21 @@ def whatsapp_webhook():
                                 chat_id = ai_response.get("chat_id")
 
                                 if is_live and ai_response:
+
+                                    save_response_log(
+                                        str(ai_response),
+                                        "9999999999",
+                                        "9999999999"
+                                    )
+                                    
                                     frappe.publish_realtime(
                                         f"whatsapp_chat_{chat_id}",
-                                        message={"message": response_text, "sender": from_number}
+                                        message={
+                                            "message": msg_body,
+                                            "sender": from_number,
+                                            "role": "user",
+                                            "timestamp": timestamp,
+                                        }
                                     )
 
                                 elif response_text:
@@ -553,12 +565,8 @@ def send_to_ai(instance_id, from_number, to_number, message_type, text: str="", 
         stream=False,
     )
 
-    save_response_log(
-        str(ai_response),
-        "9999999999",
-        "9999999999"
-    )
-    
+    ai_response["chat_id"] = chat.name
+
     return ai_response
 
 
