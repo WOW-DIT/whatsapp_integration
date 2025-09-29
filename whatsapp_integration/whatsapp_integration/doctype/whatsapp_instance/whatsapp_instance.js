@@ -32,12 +32,13 @@ function sub_business_account(frm) {
 	frappe.call({
 		method: `whatsapp_integration.whatsapp_onboarding_api.subscribe_business_account?instance_id=${frm.doc.name}`,
 		callback: function(res) {
-            console.log(res.message)
 			if(res.message.success) {
 				frappe.msgprint(res.message.message)
 
                 frm.set_value("enabled", 1)
                 frm.save()
+
+                location.reload()
 			}
 		}
 	})

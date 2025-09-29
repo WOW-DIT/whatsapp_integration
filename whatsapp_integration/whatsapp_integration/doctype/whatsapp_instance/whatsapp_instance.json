@@ -10,6 +10,8 @@
   "user",
   "enabled",
   "registered",
+  "column_break_5mjyx",
+  "business_account",
   "whatsapp_info_section",
   "phone_id",
   "column_break_0ioim",
@@ -48,11 +50,10 @@
    "fieldtype": "Column Break"
   },
   {
+   "fetch_from": "business_account.business_account_id",
    "fieldname": "business_id",
    "fieldtype": "Data",
-   "in_list_view": 1,
    "label": "Business ID",
-   "reqd": 1,
    "search_index": 1
   },
   {
@@ -64,7 +65,6 @@
    "fieldname": "verify_token",
    "fieldtype": "Data",
    "hidden": 1,
-   "in_list_view": 1,
    "label": "Verify Token"
   },
   {
@@ -109,11 +109,28 @@
    "fieldtype": "Check",
    "label": "Registered",
    "read_only": 1
+  },
+  {
+   "fieldname": "column_break_5mjyx",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "business_account",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Business Account",
+   "options": "WhatsApp Business Account",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
- "links": [],
- "modified": "2025-09-04 17:03:49.923243",
+ "links": [
+  {
+   "link_doctype": "Message Context Template",
+   "link_fieldname": "whatsapp_instance"
+  }
+ ],
+ "modified": "2025-09-24 16:18:10.824574",
  "modified_by": "Administrator",
  "module": "WhatsApp Integration",
  "name": "WhatsApp Instance",

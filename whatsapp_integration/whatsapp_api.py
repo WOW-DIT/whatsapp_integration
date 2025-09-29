@@ -91,7 +91,6 @@ def whatsapp_webhook():
                 ## Update template status
                 if field == "message_template_status_update":
                     try:
-                        save_response_log(str(value), "lklklklklklklklkkl", "lklklklklklklklkkl")
                         template_id = value.get("message_template_id")
                         status = value.get("event")
 
@@ -112,51 +111,41 @@ def whatsapp_webhook():
                     wa_instances = frappe.get_all(
                         "WhatsApp Instance",
                         filters={"business_id": business_id, "enabled": 1},
-                        fields=[
-                            "name", "user", "business_id",
-                            "phone_id", "app_secret", "token",
-                            "error_message",
-                        ]
+                        limit=1,
                     )
                     if not wa_instances:
                         raise Exception("Business user is not subscribed")
 
-                    context = frappe.get_all(
-                        "Message Context Template",
-                        filters={"phone_id": phone_id},
-                        fields=["name", "client_credentials", "override_model"],
-                        limit=1,
-                    )
-                    if not context:
-                        raise Exception("WhatsApp Ai Agent was not found")
-
-                    context = context[0]
                     wa_instance = frappe.get_doc("WhatsApp Instance", wa_instances[0].name)
                     user = wa_instance.user
                     token = wa_instance.get_password("token")
+
+                    context = get_ai_context(wa_instance.name)
+                    if not context:
+                        raise Exception("service is currently down. we will be back soon.")
                     
                     from_number = messages[0]["from"]
                     to_number = value["contacts"][0]["wa_id"]
-
                     try:
-                        client_subscription = get_sub(user)
+                        client_subscription = get_sub(wa_instance.business_account)
                         if client_subscription is None:
                             error_message = str(wa_instance.error_message).strip() if wa_instance.error_message else ""
                             if error_message:
                                 raise Exception(error_message)
                             else:
                                 return
+                            
+                        sub_id = client_subscription.name
+                        enough_balance = has_enough_balance(sub_id)
+
+                        if not enough_balance:
+                            return
 
                         for msg in messages:
                             timestamp = datetime.fromtimestamp(float(msg["timestamp"]))
                             message_type = msg["type"]
                             image = None
 
-                            save_response_log(
-                                str(msg),
-                                "message",
-                                "message",
-                            )
                             if message_type == "text":
                                 msg_body = msg["text"]["body"]
                             
@@ -215,7 +204,7 @@ def whatsapp_webhook():
                             elif message_type == "image":
                                 try:
                                     if context.override_model == 0:
-                                        raise Exception("Sending images are currently not supported")
+                                        raise Exception("Sending images is currently not supported")
                                     
                                     media = msg["image"]
                                     media_id = media.get("id")
@@ -265,30 +254,35 @@ def whatsapp_webhook():
                             log.save(ignore_permissions=True)
 
                             try:
-                                ai_response = send_to_ai(
+                                chat = get_chat(
                                     wa_instance.name,
                                     from_number,
-                                    to_number,
-                                    message_type,
-                                    msg_body,
-                                    image,
-                                    timestamp,
+                                    context,
+                                )
+
+                                model = get_model(context)
+
+                                ai_response = ai_chat(
+                                    model=model,
+                                    chat_id=chat.name,
+                                    message_type=message_type,
+                                    new_message={
+                                        "role": "user",
+                                        "content": f"({from_number}) says: {msg_body}",
+                                    },
+                                    plain_text=msg_body,
+                                    image=image,
+                                    to_number=to_number,
+                                    timestamp=timestamp,
+                                    stream=False,
                                 )
 
                                 is_live = ai_response.get("is_live")
                                 response_text = ai_response.get("response")
-                                chat_id = ai_response.get("chat_id")
 
-                                if is_live and ai_response:
-
-                                    save_response_log(
-                                        str(ai_response),
-                                        "9999999999",
-                                        "9999999999"
-                                    )
-                                    
+                                if is_live and ai_response:                            
                                     frappe.publish_realtime(
-                                        f"whatsapp_chat_{chat_id}",
+                                        f"whatsapp_chat_{chat.name}",
                                         message={
                                             "message": msg_body,
                                             "sender": from_number,
@@ -310,6 +304,8 @@ def whatsapp_webhook():
                                         to_number=to_number,
                                         text=response_text,
                                     )
+                                    if wa_message.status_code == 200:
+                                        spent = spend_balance(sub_id)
 
                             except Exception as e:
                                 save_response_log(
@@ -510,14 +506,43 @@ def upload_file_full(api_version: str, app_id: str, access_token: str, file_path
     return result["h"]
 
 
-def get_sub(user):
+def has_enough_balance(sub_id):
+    balance = frappe.db.get_value(
+        "WhatsApp Subscription",
+        sub_id,
+        "balance"
+    )
+    if balance <= 0:
+        return False
+    return True
+
+
+def spend_balance(sub_id):
+    try:
+        frappe.db.set_value(
+            "WhatsApp Subscription",
+            sub_id,
+            "balance",
+            (frappe.db.get_value(
+                "WhatsApp Subscription",
+                sub_id,
+                "balance"
+            ) - 1),
+            update_modified=False,
+        )
+        return True
+    except:
+        return False
+    
+
+def get_sub(business_account):
     try:
         # today = datetime.now().date()
         # today_str = today.strftime("%Y-%m-%d")
 
         subs = frappe.get_all(
             "WhatsApp Subscription",
-            filters={"user": user, "enabled": 1},
+            filters={"business_account": business_account, "enabled": 1},
             fields=["name"],
             limit=1,
         )
@@ -530,44 +555,19 @@ def get_sub(user):
         return None
 
 
-def send_to_ai(instance_id, from_number, to_number, message_type, text: str="", image: dict=None, timestamp: datetime=datetime.now()):
+def get_ai_context(instance_id):
     ai_contexts = frappe.get_all(
         "Message Context Template",
         filters={"whatsapp_instance": instance_id},
-        fields=["name", "llm", "default_model", "gpt_model", "override_model"]
+        fields=["name", "llm", "default_model", "gpt_model", "override_model", "client_credentials"],
+        limit=1,
     )
 
     if not ai_contexts:
         return None
 
     ai_context = ai_contexts[0]
-
-    chat = get_chat(
-        instance_id,
-        from_number,
-        ai_context,
-    )
-
-    model = get_model(ai_context)
-
-    ai_response = ai_chat(
-        model=model,
-        chat_id=chat.name,
-        message_type=message_type,
-        new_message={
-            "role": "user",
-            "content": f"({from_number}) says: {text}",
-        },
-        plain_text=text,
-        image=image,
-        to_number=to_number,
-        timestamp=timestamp,
-        stream=False,
-    )
-
-    ai_response["chat_id"] = chat.name
-
-    return ai_response
+    return ai_context
 
 
 def get_chat(instance_id, from_number, ai_context):

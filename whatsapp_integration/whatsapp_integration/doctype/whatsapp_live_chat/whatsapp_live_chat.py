@@ -12,6 +12,48 @@ class WhatsAppLiveChat(Document):
 	pass
 
 @frappe.whitelist()
+def start_live_session(chat_id):
+	try:
+		if frappe.db.exists(
+			"Ai Chat",
+			chat_id,
+		):
+			frappe.db.set_value(
+				"Ai Chat",
+				chat_id,
+				"is_live",
+				1,
+				update_modified=False,
+			)
+			url = f"/app/whatsapp-live-chat/WhatsApp%20Live%20Chat?chat_id={chat_id}"
+			return {"success": True, "url": url}
+		
+		return {"success": False, "error": "Chat not found"}
+	except Exception as e:
+		return {"success": False, "error": str(e)}
+
+@frappe.whitelist()
+def end_live_session(chat_id):
+	try:
+		if frappe.db.exists(
+			"Ai Chat",
+			chat_id,
+		):
+			frappe.db.set_value(
+				"Ai Chat",
+				chat_id,
+				"is_live",
+				0,
+				update_modified=False,
+			)
+			url = "/app"
+			return {"success": True, "url": url}
+		
+		return {"success": False, "error": "Chat not found"}
+	except Exception as e:
+		return {"success": False, "error": str(e)}
+
+@frappe.whitelist()
 def get_messages(chat_id, page=1):
 	try:
 		page_size = 50
@@ -48,7 +90,7 @@ def send_live_message(chat_id: str, message_type: str, text: str):
 			data = response.json()
 			message = data["messages"][0]
 			wam_id = message.get("id")
-			role = "assistant"
+			role = frappe.session.user
 
 			payload = {
 				"type": "question",
@@ -64,6 +106,7 @@ def send_live_message(chat_id: str, message_type: str, text: str):
 			
 			msg.content = json.dumps(payload, ensure_ascii=False)
 			msg.message_text = text
+			msg.timestamp = datetime.now()
 			msg.insert(ignore_permissions=True)
 
 			chat.append(
@@ -71,11 +114,6 @@ def send_live_message(chat_id: str, message_type: str, text: str):
 				{"message": msg.name}
 			)
 			chat.save(ignore_permissions=True)
-
-			# frappe.publish_realtime(
-			# 	f"whatsapp_chat_{chat_id}",
-			# 	message={"message": text, "role": role, "timestamp": datetime.now()}
-			# )
 			
 			return {"success": success}
 		

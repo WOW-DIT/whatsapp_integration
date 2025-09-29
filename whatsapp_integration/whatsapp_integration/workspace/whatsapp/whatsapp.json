@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"ymzPathyt6\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Shortcuts</b></span>\",\"col\":12}},{\"id\":\"DMki7aRLPI\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Message Templates\",\"col\":6}},{\"id\":\"4T8Adsnp0h\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Whatsapp Broadcast Message\",\"col\":6}},{\"id\":\"oJ8IOj8Pxz\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"ExS6-AcBYb\",\"type\":\"quick_list\",\"data\":{\"quick_list_name\":\"WhatsApp Instance\",\"col\":6}},{\"id\":\"5cZdc2_P0b\",\"type\":\"quick_list\",\"data\":{\"quick_list_name\":\"Ai Agents\",\"col\":6}},{\"id\":\"JZ781188iD\",\"type\":\"quick_list\",\"data\":{\"quick_list_name\":\"Chats\",\"col\":6}}]",
+ "content": "[{\"id\":\"jldOCBmy4Y\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Register</b></span>\",\"col\":12}},{\"id\":\"PVjDEpmEH9\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Register a new WhatsApp number \",\"col\":12}},{\"id\":\"ixNBzGkIbX\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"ymzPathyt6\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Shortcuts</b></span>\",\"col\":12}},{\"id\":\"cP9T5penHO\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"My Subscription\",\"col\":3}},{\"id\":\"DMki7aRLPI\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Message Templates\",\"col\":4}},{\"id\":\"4T8Adsnp0h\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Whatsapp Broadcast Message\",\"col\":5}},{\"id\":\"1ctZBgPeuK\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Blocked Numbers\",\"col\":3}},{\"id\":\"oJ8IOj8Pxz\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"UII4jorywy\",\"type\":\"quick_list\",\"data\":{\"quick_list_name\":\"Business Accounts\",\"col\":4}},{\"id\":\"ExS6-AcBYb\",\"type\":\"quick_list\",\"data\":{\"quick_list_name\":\"WhatsApp Instance\",\"col\":4}},{\"id\":\"5cZdc2_P0b\",\"type\":\"quick_list\",\"data\":{\"quick_list_name\":\"Ai Agents\",\"col\":4}},{\"id\":\"JZ781188iD\",\"type\":\"quick_list\",\"data\":{\"quick_list_name\":\"Chats\",\"col\":12}}]",
  "creation": "2025-07-27 16:21:25.626214",
  "custom_blocks": [],
  "docstatus": 0,
@@ -12,7 +12,7 @@
  "is_hidden": 0,
  "label": "WhatsApp",
  "links": [],
- "modified": "2025-09-14 14:19:01.993502",
+ "modified": "2025-09-24 16:12:28.304015",
  "modified_by": "Administrator",
  "module": "WhatsApp Integration",
  "name": "WhatsApp",
@@ -27,6 +27,11 @@
    "quick_list_filter": "[]"
   },
   {
+   "document_type": "WhatsApp Business Account",
+   "label": "Business Accounts",
+   "quick_list_filter": "[]"
+  },
+  {
    "document_type": "Ai Chat",
    "label": "Chats",
    "quick_list_filter": "[]"
@@ -38,7 +43,7 @@
   }
  ],
  "roles": [],
- "sequence_id": 8.0,
+ "sequence_id": 9.0,
  "shortcuts": [
   {
    "color": "Grey",
@@ -53,6 +58,29 @@
    "doc_view": "List",
    "label": "Message Templates",
    "link_to": "WhatsApp Message Template",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Blocked Numbers",
+   "link_to": "WhatsApp Block List",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Register a new WhatsApp number ",
+   "type": "URL",
+   "url": "https://whatsapp.wowdigital.sa/whatsapp-signup/"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "My Subscription",
+   "link_to": "WhatsApp Subscription",
    "stats_filter": "[]",
    "type": "DocType"
   }

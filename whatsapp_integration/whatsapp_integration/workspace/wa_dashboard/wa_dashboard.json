@@ -25,7 +25,7 @@
  "is_hidden": 0,
  "label": "WA Dashboard",
  "links": [],
- "modified": "2025-08-26 15:17:38.223078",
+ "modified": "2025-09-22 16:42:56.027169",
  "modified_by": "Administrator",
  "module": "WhatsApp Integration",
  "name": "WA Dashboard",
@@ -68,7 +68,7 @@
  "public": 1,
  "quick_lists": [],
  "roles": [],
- "sequence_id": 7.0,
+ "sequence_id": 8.0,
  "shortcuts": [],
  "title": "WA Dashboard"
 }

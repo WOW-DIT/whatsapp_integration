@@ -1,0 +1,57 @@
+{
+ "charts": [],
+ "content": "[{\"id\":\"2CS7tWydU0\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">WhatsApp Admin</span>\",\"col\":12}},{\"id\":\"H7HxUxXusN\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Whatsapp Settings\",\"col\":3}},{\"id\":\"VJ6rRz-q-l\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"WhatsApp Subscriptions\",\"col\":4}},{\"id\":\"erO8xFbWow\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Charge Whatsapp Number\",\"col\":5}}]",
+ "creation": "2025-09-22 16:39:38.853234",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "restriction",
+ "idx": 0,
+ "is_hidden": 0,
+ "label": "WhatsApp Admin",
+ "links": [],
+ "modified": "2025-09-22 16:45:07.901737",
+ "modified_by": "Administrator",
+ "module": "WhatsApp Integration",
+ "name": "WhatsApp Admin",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [
+  {
+   "role": "Administrator"
+  }
+ ],
+ "sequence_id": 7.0,
+ "shortcuts": [
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "WhatsApp Subscriptions",
+   "link_to": "WhatsApp Subscription",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Orange",
+   "doc_view": "List",
+   "format": "{} Pending",
+   "label": "Charge Whatsapp Number",
+   "link_to": "Charge WhatsApp Number",
+   "stats_filter": "[[\"Charge WhatsApp Number\",\"docstatus\",\"=\",\"0\",false]]",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Whatsapp Settings",
+   "link_to": "WhatsApp Settings",
+   "type": "DocType"
+  }
+ ],
+ "title": "WhatsApp Admin"
+}

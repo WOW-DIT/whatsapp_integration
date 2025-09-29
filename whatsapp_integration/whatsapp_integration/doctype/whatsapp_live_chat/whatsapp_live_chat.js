@@ -5,6 +5,7 @@ frappe.ui.form.on('WhatsApp Live Chat', {
 	refresh: function(frm) {
 		frm.disable_save();
 		build_chat_html(frm);
+		set_chat(frm);
 		get_messages(frm);
 	},
 	chat_id: function(frm) {
@@ -31,10 +32,8 @@ function bind_realtime(frm) {
     if (frm._realtime_bound) return; // bind once
     frm._realtime_bound = true;
 
-    // global handler for this event name
     frappe.realtime.on(`whatsapp_chat_${frm.doc.chat_id}`, (data) => {
-		console.log(data)
-        // only handle messages for the open chat
+
         if (!data || !frm.doc.chat_id) return;
         append_message(frm, data);
     });
@@ -46,47 +45,72 @@ function append_message(frm, msg) {
 	// const type = msg.type;
 	const text = msg.message;
 	// const image = msg.image;
-	const timestamp = msg.timestamp;
+	const timestamp = msg.timestamp;//.split(".")[0];
+	const is_assistant = role !== "user";
 
 	let new_message = `
 		<div class="message_row">
-			${role === "assistant" ? "<div></div>" : ""}
-			<div class="${role === "assistant" ? "message_bubble" : "message_bubble_other"}">
+			${is_assistant ? "<div></div>" : ""}
+			<div class="${role !== "user" ? "message_bubble" : "message_bubble_other"}">
 				<div class="message_content">
 					<strong>${text}</strong>
 				</div>
 				<div class="time_row">
-					${role === "assistant" ? "<div></div>" : ""}
+					${is_assistant ? "<div></div>" : ""}
 					<p>${timestamp}</p>
-					${role === "user" ? "<div></div>" : ""}
+					${!is_assistant ? "<div></div>" : ""}
 				</div>
 			</div>
-			${role === "user" ? "<div></div>" : ""}
+			${!is_assistant ? "<div></div>" : ""}
 		</div>
 	`;
-	console.log("11111111111111111111111111")
 	messages_box.innerHTML += new_message;
 	messages_box.scrollTop = messages_box.scrollHeight;
-	console.log("222222222222222222222222222222")
+}
+
+
+function set_chat(frm) {
+	const params = new URLSearchParams(window.location.search);
+	const chat_id = params.get("chat_id");
+
+	if(chat_id) {
+		frm.set_value("chat_id", chat_id)
+	}
 }
 
 
 function get_messages(frm) {
-	if(frm.doc.chat_id) {
-		const messages_box = document.getElementById("messages");
-		if(messages_box) {
-			messages_box.innerHTML = "";
-		}
-		frappe.call({
-			method: `whatsapp_integration.whatsapp_integration.doctype.whatsapp_live_chat.whatsapp_live_chat.get_messages?chat_id=${frm.doc.chat_id}`,
-			callback: function(res) {
-				if(res.message.success) {
-					const messages = res.message.messages;
-					show_messages(frm, messages);
-				}
-			}
-		})
+	const messages_box = document.getElementById("messages");
+	if (!frm.doc.chat_id) {
+		if (messages_box) messages_box.innerHTML = "";
+		return;
 	}
+
+	if (messages_box) messages_box.innerHTML = "";
+	setInputEnabled(false);
+	showPanelLoader();
+
+	frappe.call({
+		method: `whatsapp_integration.whatsapp_integration.doctype.whatsapp_live_chat.whatsapp_live_chat.get_messages?chat_id=${frm.doc.chat_id}`,
+		freeze: true,
+		freeze_message: __("Fetching messages…"),
+		callback: function(res) {
+			hidePanelLoader();
+			setInputEnabled(true);
+
+			if (res?.message?.success) {
+				const messages = res.message.messages || [];
+				show_messages(frm, messages);
+			} else {
+				frappe.msgprint({ title: __("Error"), message: __("Failed to load messages."), indicator: "red" });
+			}
+		},
+		error: function() {
+			hidePanelLoader();
+			setInputEnabled(true);
+			frappe.msgprint({ title: __("Error"), message: __("Failed to load messages."), indicator: "red" });
+		}
+	})
 }
 
 function send_message(frm, messageInput) {
@@ -120,6 +144,33 @@ function send_message(frm, messageInput) {
 
 function build_chat_html(frm) {
 	const chat_style = `
+		#chat_container { position: relative; }
+		#chat_loader { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 5; }
+		.loader_backdrop { position: absolute; inset: 0; background: rgba(255,255,255,0.65); backdrop-filter: blur(1px); }
+		.loader_box { position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px 16px; border-radius: 8px; background: #ffffff; border: 1px solid #e5e7eb; box-shadow: 0 8px 24px rgba(0,0,0,0.08);}
+		.loader_text { font-size: 12px; color: #6b7280; }
+
+		/* Dual ring spinner (no external deps) */
+		.lds-dual-ring {
+			display: inline-block;
+			width: 28px;
+			height: 28px;
+		}
+		.lds-dual-ring:after {
+			content: " ";
+			display: block;
+			width: 28px;
+			height: 28px;
+			margin: 1px;
+			border-radius: 50%;
+			border: 3px solid #0FCE01;
+			border-color: #0FCE01 transparent #0FCE01 transparent;
+			animation: lds-dual-ring 1.2s linear infinite;
+		}
+		@keyframes lds-dual-ring {
+			0% { transform: rotate(0deg); }
+			100% { transform: rotate(360deg); }
+		}
 		#chat_container {
 			width: 100%;
 			height: 450px;
@@ -239,28 +290,28 @@ function show_messages(frm, messages) {
 	const messages_box = document.getElementById("messages");
 	let messages_html = "";
 	
-	console.log(messages)
 	for(let msg of messages) {
 		const role = msg.role;
 		const type = msg.type;
 		const text = msg.message_text;
 		const image = msg.image;
-		const timestamp = msg.timestamp;
+		const timestamp = msg.timestamp;// === null ? "" : msg.timestamp.split(".")[0];
+		const is_assistant = role !== "user";
 
 		messages_html += `
 			<div class="message_row">
-				${role === "assistant" ? "<div></div>" : ""}
-				<div class="${role === "assistant" ? "message_bubble" : "message_bubble_other"}">
+				${is_assistant ? "<div></div>" : ""}
+				<div class="${is_assistant ? "message_bubble" : "message_bubble_other"}">
 					<div class="message_content">
 						<strong>${text}</strong>
 					</div>
 					<div class="time_row">
-						${role === "assistant" ? "<div></div>" : ""}
+						${is_assistant ? "<div></div>" : ""}
 						<p>${timestamp}</p>
-						${role === "user" ? "<div></div>" : ""}
+						${!is_assistant ? "<div></div>" : ""}
 					</div>
 				</div>
-				${role === "user" ? "<div></div>" : ""}
+				${!is_assistant ? "<div></div>" : ""}
 			</div>
 		`;
 	}
@@ -270,4 +321,52 @@ function show_messages(frm, messages) {
 
 
 	bind_realtime(frm);
+	frm.add_custom_button("End Live", () => {
+		endLiveSession(frm);
+	}).addClass("btn-primary");
+}
+
+function endLiveSession(frm) {
+	frappe.call({
+		method: "whatsapp_integration.whatsapp_integration.doctype.whatsapp_live_chat.whatsapp_live_chat.end_live_session",
+		args: {
+			chat_id: frm.doc.chat_id
+		},
+		callback: function(r) {
+			if(r.message.success) {
+				frm.set_value("chat_id", "");
+				location.href = r.message.url;
+			}
+		}
+	})
+}
+
+// --- Loading helpers ---
+function setInputEnabled(enabled) {
+	const input = document.getElementById("message-input");
+	const btn = document.getElementById("send-btn");
+	if (input) input.disabled = !enabled;
+	if (btn) btn.disabled = !enabled;
+}
+
+function showPanelLoader() {
+	const c = document.getElementById("chat_container");
+	if (!c) return;
+	if (!document.getElementById("chat_loader")) {
+		const loader = document.createElement("div");
+		loader.id = "chat_loader";
+		loader.innerHTML = `
+			<div class="loader_backdrop"></div>
+			<div class="loader_box">
+				<div class="lds-dual-ring"></div>
+				<div class="loader_text">Loading…</div>
+			</div>
+		`;
+		c.appendChild(loader);
+	}
+}
+
+function hidePanelLoader() {
+	const el = document.getElementById("chat_loader");
+	if (el) el.remove();
 }

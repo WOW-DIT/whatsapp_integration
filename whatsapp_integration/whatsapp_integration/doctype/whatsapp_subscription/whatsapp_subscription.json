@@ -8,15 +8,10 @@
  "engine": "InnoDB",
  "field_order": [
   "user",
+  "business_account",
   "enabled",
   "column_break_4kpok",
-  "balance",
-  "kpis_section",
-  "total_messages",
-  "total_responses",
-  "column_break_5qrin",
-  "total_customers",
-  "total_conversations"
+  "balance"
  ],
  "fields": [
   {
@@ -25,8 +20,7 @@
    "in_list_view": 1,
    "label": "User",
    "options": "User",
-   "reqd": 1,
-   "unique": 1
+   "reqd": 1
   },
   {
    "fieldname": "column_break_4kpok",
@@ -36,7 +30,7 @@
    "fieldname": "balance",
    "fieldtype": "Int",
    "label": "Balance",
-   "reqd": 1
+   "read_only": 1
   },
   {
    "default": "0",
@@ -45,38 +39,23 @@
    "label": "Enabled"
   },
   {
-   "fieldname": "kpis_section",
-   "fieldtype": "Section Break",
-   "label": "Stats"
-  },
-  {
-   "fieldname": "total_messages",
-   "fieldtype": "Int",
-   "label": "Total Messages"
-  },
-  {
-   "fieldname": "total_responses",
-   "fieldtype": "Int",
-   "label": "Total Responses"
-  },
-  {
-   "fieldname": "column_break_5qrin",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "total_customers",
-   "fieldtype": "Int",
-   "label": "Total Customers"
-  },
-  {
-   "fieldname": "total_conversations",
-   "fieldtype": "Int",
-   "label": "Total Conversations"
+   "fieldname": "business_account",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Business Account",
+   "options": "WhatsApp Business Account",
+   "reqd": 1,
+   "unique": 1
   }
  ],
  "index_web_pages_for_search": 1,
- "links": [],
- "modified": "2025-08-19 13:46:17.200677",
+ "links": [
+  {
+   "link_doctype": "Charge WhatsApp Number",
+   "link_fieldname": "whatsapp_business_account"
+  }
+ ],
+ "modified": "2025-09-24 12:38:07.543907",
  "modified_by": "Administrator",
  "module": "WhatsApp Integration",
  "name": "WhatsApp Subscription",
@@ -99,5 +78,5 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "title_field": "user"
+ "title_field": "business_account"
 }
