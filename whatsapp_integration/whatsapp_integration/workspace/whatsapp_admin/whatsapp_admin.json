@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"2CS7tWydU0\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">WhatsApp Admin</span>\",\"col\":12}},{\"id\":\"H7HxUxXusN\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Whatsapp Settings\",\"col\":3}},{\"id\":\"VJ6rRz-q-l\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"WhatsApp Subscriptions\",\"col\":4}},{\"id\":\"erO8xFbWow\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Charge Whatsapp Number\",\"col\":5}}]",
+ "content": "[{\"id\":\"2CS7tWydU0\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">WhatsApp Admin</span>\",\"col\":12}},{\"id\":\"H7HxUxXusN\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Whatsapp Settings\",\"col\":3}},{\"id\":\"2Tn2ZjRyP9\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Packages\",\"col\":3}},{\"id\":\"VJ6rRz-q-l\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"WhatsApp Subscriptions\",\"col\":6}},{\"id\":\"erO8xFbWow\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Charge Whatsapp Number\",\"col\":4}}]",
  "creation": "2025-09-22 16:39:38.853234",
  "custom_blocks": [],
  "docstatus": 0,
@@ -12,7 +12,7 @@
  "is_hidden": 0,
  "label": "WhatsApp Admin",
  "links": [],
- "modified": "2025-09-22 16:45:07.901737",
+ "modified": "2025-10-01 16:06:53.225985",
  "modified_by": "Administrator",
  "module": "WhatsApp Integration",
  "name": "WhatsApp Admin",
@@ -26,8 +26,16 @@
    "role": "Administrator"
   }
  ],
- "sequence_id": 7.0,
+ "sequence_id": 33.0,
  "shortcuts": [
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Packages",
+   "link_to": "WhatsApp Package",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
   {
    "color": "Grey",
    "doc_view": "List",

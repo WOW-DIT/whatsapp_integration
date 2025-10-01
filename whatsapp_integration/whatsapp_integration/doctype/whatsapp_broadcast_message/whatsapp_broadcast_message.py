@@ -4,6 +4,7 @@
 import frappe
 from frappe.model.document import Document
 from whatsapp_integration.whatsapp_api import send_message
+import json
 
 class WhatsAppBroadcastMessage(Document):
 	def on_submit(self):
@@ -15,6 +16,13 @@ class WhatsAppBroadcastMessage(Document):
 		template_name = None
 		template_langauge = None
 		template_components = None
+		latitude =None
+		longitude=None
+		address=None
+		location_name=None
+		image_url=None
+		image_caption=None
+
 		
 		if self.message_type.lower() == "template":
 			template = frappe.get_doc("WhatsApp Message Template", self.template)
@@ -24,6 +32,18 @@ class WhatsAppBroadcastMessage(Document):
 
 			self.error_message = str(template_components)
 
+		if self.message_type.lower() == "location":
+			coords = json.loads(self.location)["features"][0]["geometry"]["coordinates"]
+			latitude = str(coords[0])
+			longitude = str(coords[1])
+			location_name = self.location_name
+			address = self.address
+
+		if self.message_type.lower() == "image":			
+			image_url=self.image
+			image_caption=self.image_caption
+
+				  
 		for client in self.numbers:
 			try:
 				response = send_message(
@@ -34,8 +54,17 @@ class WhatsAppBroadcastMessage(Document):
 					template_name=template_name,
 					template_language=template_langauge,
 					template_components=template_components,
+					latitude = latitude,
+					longitude =longitude,
+					location_name=location_name,
+					address=address,
+					image_url=image_url,
+					image_caption=image_caption,
 				)
+				frappe.throw(str(response.text))
 				if response.status_code != 200:
+					frappe.throw(str(response.text))
+
 					self.append(
 						"error_logs",
 						{
@@ -43,6 +72,7 @@ class WhatsAppBroadcastMessage(Document):
 						}
 					)
 			except Exception as e:
+				frappe.throw(str(e))
 				self.append(
 					"error_logs",
 					{
@@ -187,20 +217,6 @@ def init_broadcast(
 		"reference_id": m_broadcast.name,
 		"message": "Message draft has been created",
 	}
-
-
-
-@frappe.whitelist()
-def send_wa_message(bc_id):
-	bc = frappe.get_doc("WhatsApp Broadcast Message", bc_id)
-	template = frappe.get_doc("WhatsApp Message Template", bc.template)
-	header_type = template.header_type
-
-	if header_type == "TEXT":
-		pass
-	else:
-		extension = template.header_example_file.split(".")[-1]
-		f_type = file_type(extension)
 
 
 def file_type(extension):

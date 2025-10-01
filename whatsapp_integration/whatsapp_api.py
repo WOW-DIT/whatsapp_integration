@@ -24,6 +24,13 @@ def send_message(
     template_name=None,
     template_language=None,
     template_components=None,
+    latitude=None,
+    longitude=None,
+    address=None,
+    location_name=None,
+    image_url=None,
+    image_caption=None,
+
 ):
     wa_settings = frappe.get_doc("WhatsApp Settings", "WhatsApp Settings")
 
@@ -55,7 +62,29 @@ def send_message(
             template_name=template_name,
             language_code=template_language,
             components=template_components,
-        )        
+        )
+
+    elif type == "location":
+        response = send_whatsapp_location(
+            version=api_version,
+            phone_id=phone_id,
+            token=token,
+            to_number=client_number,
+            latitude=latitude,
+            longitude=longitude,
+            name=location_name,
+            address=address,
+        )
+    elif type == "image":
+        response = send_whatsapp_image(
+            version=api_version,
+            phone_id=phone_id,
+            token=token,
+            to_number=client_number,
+            url=image_url,
+            image_caption=image_caption
+        )
+            
 
     return response
 
@@ -557,7 +586,7 @@ def get_sub(business_account):
 
 def get_ai_context(instance_id):
     ai_contexts = frappe.get_all(
-        "Message Context Template",
+        "AI Agent",
         filters={"whatsapp_instance": instance_id},
         fields=["name", "llm", "default_model", "gpt_model", "override_model", "client_credentials"],
         limit=1,
@@ -624,6 +653,28 @@ def send_whatsapp_response(version, phone_id, token, to_number, text):
 
     return response
 
+def send_whatsapp_location(version, phone_id, token, to_number, latitude, longitude, name, address):
+    url = f"https://graph.facebook.com/{version}/{phone_id}/messages"
+    body = {
+        "messaging_product": "whatsapp",
+        "recipient_type": "individual",
+        "to": to_number,
+        "type": "location",
+        "location": {
+            "latitude": latitude,
+            "longitude": longitude,
+            "name": name,
+            "address": address
+        }
+    }
+
+
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+    response = requests.post(url, json=body, headers=headers)
+
+    return response
 
 def send_whatsapp_template(
     version,
@@ -654,6 +705,34 @@ def send_whatsapp_template(
     return response
 
 
+def send_whatsapp_image(version, phone_id, token, to_number, url, image_caption):
+    mime_type = get_mime_type(url.split(".")[-1])
+    media = upload_media(
+        mime_type=mime_type,
+        api_version=version,
+        phone_id=phone_id,
+        token=token,
+        file_url=url,
+    )
+
+    url = f"https://graph.facebook.com/{version}/{phone_id}/messages"
+    body = {
+        "messaging_product": "whatsapp",
+        "recipient_type": "individual",
+        "to": to_number,
+        "type": "image",
+        "image": {
+            "id" : media["id"],
+            "caption": image_caption
+        }
+    }
+    
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+    response = requests.post(url, json=body, headers=headers)
+
+    return response
 
 def save_response_log(body, from_number, to_number, is_error=False):
     log = frappe.new_doc("WhatsApp Logs")

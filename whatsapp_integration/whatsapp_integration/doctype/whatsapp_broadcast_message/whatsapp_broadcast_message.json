@@ -20,6 +20,8 @@
   "template",
   "components",
   "location",
+  "location_name",
+  "address",
   "section_break_nfukb",
   "status",
   "error_message",
@@ -131,11 +133,25 @@
    "fieldtype": "Geolocation",
    "label": "Location",
    "mandatory_depends_on": "eval: doc.message_type == \"location\""
+  },
+  {
+   "depends_on": "eval: doc.message_type == \"location\"",
+   "fieldname": "location_name",
+   "fieldtype": "Data",
+   "label": "Location Name",
+   "mandatory_depends_on": "eval: doc.message_type == \"location\""
+  },
+  {
+   "depends_on": "eval: doc.message_type == \"location\"",
+   "fieldname": "address",
+   "fieldtype": "Data",
+   "label": "Address",
+   "mandatory_depends_on": "eval: doc.message_type == \"location\""
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-24 13:40:57.325904",
+ "modified": "2025-09-29 16:37:02.125574",
  "modified_by": "Administrator",
  "module": "WhatsApp Integration",
  "name": "WhatsApp Broadcast Message",
