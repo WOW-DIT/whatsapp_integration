@@ -52,7 +52,6 @@ class WhatsAppMessageTemplate(Document):
 			
 			# 3. Count placeholders
 			placeholder_count = len(matches)
-			
 			# 4. Count parts in compare_text
 			parts = compare_text.split("|")
 			if len(parts) != placeholder_count:
@@ -101,7 +100,7 @@ class WhatsAppMessageTemplate(Document):
 		
 	def build_components(self, api_version, app_id, token):
 		header = {
-			"type": "HEADER",
+			"type": "header",
 			"format": self.header_format,
 		}
 		if self.header_format == "TEXT":
@@ -140,22 +139,57 @@ class WhatsAppMessageTemplate(Document):
 				]
 			}
 
+		body_component = {
+			"type": "body",
+			"text": self.body,
+		}
+		if self.body_examples:
+			body_component["example"] = {
+				"body_text": [str(self.body_examples).split("|")],
+			}
+
+		if self.show_actions:
+			button_component = {
+				"type": "buttons",
+				"buttons": [],
+			}
+			if self.action_type == "Visit website":
+				button_component["buttons"].append({
+					"type": "url",
+					"text": self.button_text,
+					"url": self.website_url#.replace("{{1}}", ""),
+				})
+				for btn in button_component["buttons"]:
+					if "{{1}}" in btn["url"]:
+						btn["example"] = self.url_example
+						
+					
+			elif self.action_type == "Copy offer code":
+				button_component["buttons"].append({
+					"type": "copy_code",
+					"text": self.button_text,
+					"code": self.code,
+				})
+			elif self.action_type == "Call phone number":
+				button_component["buttons"].append({
+					"type": "phone_number",
+					"text": self.button_text,
+					"phone_number": self.phone_number,
+				})
+
 		components = [
 			header,
-			{
-				"type": "BODY",
-				"text": self.body,
-				"example": {
-					"body_text": [
-						str(self.body_examples).split("|")
-					]
-				}
-			},
-			{
-				"type": "FOOTER",
-				"text": self.footer
-			}
+			body_component,
 		]
+		if self.footer:
+			components.append({
+				"type": "footer",
+				"text": self.footer
+		})
+			
+		if self.show_actions:
+			components.append(button_component)
+
 		return components
 	
 	
@@ -206,8 +240,9 @@ class WhatsAppMessageTemplate(Document):
 			response = requests.post(url, json=body, headers=headers)
 			if response.status_code == 200:		
 				data = response.json()
+				self.status = "PENDING"
 
-				frappe.msgprint("Template is updated successfully.")
+				frappe.msgprint("Template is updated successfully. Please wait for the review result...")
 				return {"success": data["success"], "message": response.json(), "body": str(body)}
 			
 			else:
@@ -234,7 +269,10 @@ class WhatsAppMessageTemplate(Document):
 			}
 
 			response = requests.delete(url, params=params, headers=headers)
-			if response.status_code != 200:		
+			if response.status_code != 200:
+				if response.status_code == 400:
+					return
+				
 				frappe.throw(response.text)
 
 			

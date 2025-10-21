@@ -51,16 +51,17 @@
    "label": "Client Name"
   },
   {
-   "fetch_from": "chat_id.whatsapp_client_id",
+   "fetch_from": "chat_id.user_id",
    "fieldname": "client_number",
    "fieldtype": "Data",
    "label": "Client Number"
   }
  ],
+ "hide_toolbar": 1,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-09-14 17:23:57.300321",
+ "modified": "2025-10-07 15:37:53.892742",
  "modified_by": "Administrator",
  "module": "WhatsApp Integration",
  "name": "WhatsApp Live Chat",

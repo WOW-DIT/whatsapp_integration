@@ -1,14 +1,14 @@
 import frappe
 from werkzeug.wrappers import Response
 from datetime import datetime
-from ai_intergration.ai_intergration.api import ai_chat, speech_to_text
+from ai_intergration.ai_intergration.api import ai_chat, speech_to_text, text_to_speech
 import requests
 import json
 from io import BytesIO
 import uuid
 import os
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_wa_token(phone_id):
     instance = frappe.get_all("WhatsApp Instance", filters={"phone_id": phone_id})
     instance = frappe.get_doc("WhatsApp Instance", instance[0].name)
@@ -75,6 +75,7 @@ def send_message(
             name=location_name,
             address=address,
         )
+
     elif type == "image":
         response = send_whatsapp_image(
             version=api_version,
@@ -88,6 +89,10 @@ def send_message(
 
     return response
 
+
+@frappe.whitelist()
+def get_whatsapp_message(msg_id, api_version, ):
+    response = requests.get(f"https://graph.facebook.com/{api_version}")
 
 
 @frappe.whitelist(allow_guest=True)
@@ -132,6 +137,44 @@ def whatsapp_webhook():
 
                 phone_id = value["metadata"]["phone_number_id"]
                 messages = value.get("messages")
+                statuses = value.get("statuses")
+                
+                if statuses:
+                    ## Search for whatsapp instance by business id
+                    wa_instances = frappe.get_all(
+                        "WhatsApp Instance",
+                        filters={"business_id": business_id, "enabled": 1},
+                        limit=1,
+                    )
+                    if not wa_instances:
+                        raise Exception("Business user is not subscribed")
+
+                    wa_instance = frappe.get_doc("WhatsApp Instance", wa_instances[0].name)
+                    user = wa_instance.user
+                    token = wa_instance.get_password("token")
+
+                    context = get_ai_context(wa_instance.name)
+                    if not context:
+                        raise Exception("service is currently down. we will be back soon.")
+
+                    for st in statuses:
+                        msg_id = st.get("id")
+                        msg_status = st.get("status")
+                        recipient_id = st.get("recipient_id")
+                        conversation = st.get("conversation")
+
+                        chat = get_chat(wa_instance.name, recipient_id, context)
+                        # if not conversation:
+                        #     ## Turn on live chat mode
+                        #     frappe.db.set_value(
+                        #         "Ai Chat",
+                        #         chat.name,
+                        #         "is_live",
+                        #         1,
+                        #         update_modified=False,
+                        #     )
+
+
 
                 if messages:
                     wa_settings = frappe.get_doc("WhatsApp Settings", "WhatsApp Settings")
@@ -167,6 +210,9 @@ def whatsapp_webhook():
                         sub_id = client_subscription.name
                         enough_balance = has_enough_balance(sub_id)
 
+                        converted_audio_to_text = False
+                        converted_text_to_audio = False
+
                         if not enough_balance:
                             return
 
@@ -179,11 +225,11 @@ def whatsapp_webhook():
                                 msg_body = msg["text"]["body"]
                             
                             elif message_type == "audio":
-                                stt_error = wa_settings.stt_error_message
+                                stt_error = wa_instance.stt_error_message if wa_instance.stt_error_message else wa_settings.stt_error_message
                                 stt_model = wa_settings.stt_model
                                 
                                 try:
-                                    if wa_settings.allow_stt == 0:
+                                    if wa_settings.allow_stt == 0 or wa_instance.allow_stt == 0:
                                         raise Exception("1")
                                     
                                     media = msg["audio"]
@@ -219,6 +265,9 @@ def whatsapp_webhook():
                                         file_name,
                                         file_content,
                                     )
+
+                                    if msg_body:
+                                        converted_audio_to_text = True
                                         
                                 except Exception as e:
                                     wa_message = send_whatsapp_response(
@@ -226,7 +275,7 @@ def whatsapp_webhook():
                                         phone_id=phone_id,
                                         token=token,
                                         to_number=to_number,
-                                        text=f"{stt_error}: {e}",
+                                        text=stt_error,
                                     )
                                     return
 
@@ -274,14 +323,6 @@ def whatsapp_webhook():
 
                             from_number = msg["from"]
 
-                            log = frappe.new_doc("WhatsApp Logs")
-                            log.from_number = from_number
-                            log.to_number = to_number
-                            log.method = "Received"
-                            log.timestamp = timestamp
-                            log.body = msg_body
-                            log.save(ignore_permissions=True)
-
                             try:
                                 chat = get_chat(
                                     wa_instance.name,
@@ -301,15 +342,23 @@ def whatsapp_webhook():
                                     },
                                     plain_text=msg_body,
                                     image=image,
-                                    to_number=to_number,
+                                    to_account=to_number,
                                     timestamp=timestamp,
                                     stream=False,
                                 )
 
+                                if not ai_response:
+                                    error_msg = context.on_error if context.on_error else "عذرا لم أفهم، ممكن تكرر الطلب من فضلك."
+                                    raise Exception(error_msg)
+
+
                                 is_live = ai_response.get("is_live")
                                 response_text = ai_response.get("response")
+                                response_type = ai_response.get("message_type")
+                                file_link = ai_response.get("file_link")
+                                caption = ai_response.get("caption", "")
 
-                                if is_live and ai_response:                            
+                                if is_live:
                                     frappe.publish_realtime(
                                         f"whatsapp_chat_{chat.name}",
                                         message={
@@ -321,18 +370,78 @@ def whatsapp_webhook():
                                     )
 
                                 elif response_text:
-                                    save_response_log(
-                                        response_text,
-                                        from_number,
-                                        to_number,
-                                    )
-                                    wa_message = send_whatsapp_response(
-                                        version=api_version,
-                                        phone_id=phone_id,
-                                        token=token,
-                                        to_number=to_number,
-                                        text=response_text,
-                                    )
+                                    ## Sending audio response to the user
+                                    if message_type == "audio":
+                                        tts_model = wa_settings.tts_model
+                                        tts_voice = wa_instance.voice_type if wa_instance.voice_type else "alloy"
+
+                                        try:
+                                            audio_file_link = text_to_speech(
+                                                tts_model,
+                                                context.client_credentials,
+                                                response_text,
+                                                tts_voice,
+                                            )
+                                            wa_message = send_whatsapp_audio_link(
+                                                version=api_version,
+                                                phone_id=phone_id,
+                                                token=token,
+                                                to_number=to_number,
+                                                file_link=audio_file_link,
+                                            )
+
+                                        ## Return to default response content type (text)
+                                        except:
+                                            wa_message = send_whatsapp_response(
+                                                version=api_version,
+                                                phone_id=phone_id,
+                                                token=token,
+                                                to_number=to_number,
+                                                text=response_text,
+                                            )
+
+                                    ## Default (Send text)
+                                    else:
+                                        wa_message = send_whatsapp_response(
+                                            version=api_version,
+                                            phone_id=phone_id,
+                                            token=token,
+                                            to_number=to_number,
+                                            text=response_text,
+                                        )
+
+                                    if wa_message.status_code == 200:
+                                        number_of_points = calculate_deducted_balance(
+                                            wa_settings,
+                                            converted_audio_to_text,
+                                            converted_text_to_audio,
+                                        )
+                                        
+                                        spent = spend_balance(sub_id, number_of_points)
+
+                                    if response_type == "text":
+                                        return
+                                    
+                                    if response_type == "document":
+                                        wa_message = send_whatsapp_document_link(
+                                            version=api_version,
+                                            phone_id=phone_id,
+                                            token=token,
+                                            to_number=to_number,
+                                            file_link=file_link,
+                                            caption=caption,
+                                        )
+
+                                    if response_type == "image":
+                                        wa_message = send_whatsapp_image_link(
+                                            version=api_version,
+                                            phone_id=phone_id,
+                                            token=token,
+                                            to_number=to_number,
+                                            file_link=file_link,
+                                            image_caption=caption,
+                                        )
+
                                     if wa_message.status_code == 200:
                                         spent = spend_balance(sub_id)
 
@@ -422,24 +531,18 @@ def get_mime_type(extension):
 
 def upload_media(api_version, token, phone_id, file_url, mime_type) -> dict:
     try:
+        file_name = file_url.split("/")[-1]
         url = f"https://graph.facebook.com/{api_version}/{phone_id}/media"
         headers = {
             "Authorization": f"Bearer {token}"
         }
-        # body = {
-        #     "file": file_url,
-        #     "type": mime_type,
-        #     "messaging_product": "whatsapp",
-        # }
         files = {
-            "file": (file_url.split("/")[-1], open("/home/frappe/frappe-bench/sites/whatsapp.wowdigital.sa/public/files/redwsaczx.pdf", "rb"), mime_type),
+            "file": (file_name, open(f"/home/frappe/frappe-bench/sites/whatsapp.wowdigital.sa/public/files/{file_name}", "rb"), mime_type),
             "messaging_product": (None, "whatsapp")
         }
 
         response = requests.post(url, headers=headers, files=files)
         
-        # response = requests.post(url, json=body, headers=headers)
-
         data = response.json()
 
         return data
@@ -546,7 +649,7 @@ def has_enough_balance(sub_id):
     return True
 
 
-def spend_balance(sub_id):
+def spend_balance(sub_id, number_of_points=1):
     try:
         frappe.db.set_value(
             "WhatsApp Subscription",
@@ -556,13 +659,25 @@ def spend_balance(sub_id):
                 "WhatsApp Subscription",
                 sub_id,
                 "balance"
-            ) - 1),
+            ) - number_of_points),
             update_modified=False,
         )
         return True
     except:
         return False
     
+
+def calculate_deducted_balance(wa_settings, converted_audio_to_text, converted_text_to_audio):
+    number_of_points = 1
+
+    if converted_audio_to_text and wa_settings.charge_on_stt:
+        number_of_points += wa_settings.stt_balance_points
+
+    if converted_text_to_audio and wa_settings.charge_on_tts:
+        number_of_points += wa_settings.tts_balance_points
+
+    return number_of_points
+
 
 def get_sub(business_account):
     try:
@@ -588,7 +703,7 @@ def get_ai_context(instance_id):
     ai_contexts = frappe.get_all(
         "AI Agent",
         filters={"whatsapp_instance": instance_id},
-        fields=["name", "llm", "default_model", "gpt_model", "override_model", "client_credentials"],
+        fields=["name", "llm", "default_model", "gpt_model", "override_model", "client_credentials", "on_error"],
         limit=1,
     )
 
@@ -599,12 +714,12 @@ def get_ai_context(instance_id):
     return ai_context
 
 
-def get_chat(instance_id, from_number, ai_context):
+def get_chat(instance_id, from_user, ai_context):
     chats = frappe.get_all(
         "Ai Chat",
         filters={
             "context": ai_context.name,
-            "whatsapp_client_id": from_number,
+            "user_id": from_user,
         },
         fields=["name", "model"]
     )
@@ -617,7 +732,7 @@ def get_chat(instance_id, from_number, ai_context):
 
         chat.context = ai_context.name
         chat.whatsapp_instance = instance_id
-        chat.whatsapp_client_id = from_number
+        chat.user_id = from_user
         chat.save(ignore_permissions=True)
 
         frappe.db.commit()
@@ -731,8 +846,124 @@ def send_whatsapp_image(version, phone_id, token, to_number, url, image_caption)
         "Authorization": f"Bearer {token}"
     }
     response = requests.post(url, json=body, headers=headers)
-
     return response
+
+
+def send_whatsapp_image_link(version, phone_id, token, to_number, file_link, caption):
+    url = f"https://graph.facebook.com/{version}/{phone_id}/messages"
+    body = {
+        "messaging_product": "whatsapp",
+        "recipient_type": "individual",
+        "to": to_number,
+        "type": "image",
+        "image": {
+            "link" : file_link,
+            "caption": caption,
+        }
+    }
+    
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+    response = requests.post(url, json=body, headers=headers)
+    return response
+
+def send_whatsapp_document(version, phone_id, token, to_number, url, caption):
+    mime_type = get_mime_type(url.split(".")[-1])
+    media = upload_media(
+        mime_type=mime_type,
+        api_version=version,
+        phone_id=phone_id,
+        token=token,
+        file_url=url,
+    )
+    url = f"https://graph.facebook.com/{version}/{phone_id}/messages"
+    body = {
+        "messaging_product": "whatsapp",
+        "recipient_type": "individual",
+        "to": to_number,
+        "type": "document",
+        "document": {
+            "id" : media["id"],
+            "caption": caption,
+            "filename": "file.pdf"
+        }
+    }
+    
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+    response = requests.post(url, json=body, headers=headers)
+    return response
+
+
+def send_whatsapp_document_link(version, phone_id, token, to_number, file_link, caption):
+    url = f"https://graph.facebook.com/{version}/{phone_id}/messages"
+    body = {
+        "messaging_product": "whatsapp",
+        "recipient_type": "individual",
+        "to": to_number,
+        "type": "document",
+        "document": {
+            "link" : file_link,
+            "caption": caption,
+            "filename": "file.pdf"
+        }
+    }
+    
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+    response = requests.post(url, json=body, headers=headers)
+    return response
+
+
+def send_whatsapp_audio(version, phone_id, token, to_number, url):
+    mime_type = get_mime_type(url.split(".")[-1])
+    media = upload_media(
+        mime_type=mime_type,
+        api_version=version,
+        phone_id=phone_id,
+        token=token,
+        file_url=url,
+    )
+
+    url = f"https://graph.facebook.com/{version}/{phone_id}/messages"
+    body = {
+        "messaging_product": "whatsapp",
+        "recipient_type": "individual",
+        "to": to_number,
+        "type": "audio",
+        "audio": {
+            "id": media["id"],
+        }
+    }
+    
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+    response = requests.post(url, json=body, headers=headers)
+    return response
+
+
+def send_whatsapp_audio_link(version, phone_id, token, to_number, file_link):
+    url = f"https://graph.facebook.com/{version}/{phone_id}/messages"
+    body = {
+        "messaging_product": "whatsapp",
+        "recipient_type": "individual",
+        "to": to_number,
+        "type": "audio",
+        "audio": {
+            "link": file_link,
+        }
+    }
+    
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+    response = requests.post(url, json=body, headers=headers)
+    return response
+
 
 def save_response_log(body, from_number, to_number, is_error=False):
     log = frappe.new_doc("WhatsApp Logs")

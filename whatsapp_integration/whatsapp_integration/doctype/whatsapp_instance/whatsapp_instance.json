@@ -12,9 +12,11 @@
   "enabled",
   "registered",
   "column_break_5mjyx",
+  "customer_id",
   "business_account",
   "whatsapp_info_section",
   "phone_id",
+  "phone_number",
   "column_break_0ioim",
   "business_id",
   "authentication_section",
@@ -24,7 +26,13 @@
   "app_secret",
   "error_message",
   "section_break_ligjo",
-  "webhook_configuration"
+  "webhook_configuration",
+  "audio_settings_tab",
+  "allow_stt",
+  "stt_error_message",
+  "column_break_qzgb",
+  "allow_tts",
+  "voice_type"
  ],
  "fields": [
   {
@@ -42,7 +50,6 @@
   {
    "fieldname": "phone_id",
    "fieldtype": "Data",
-   "in_list_view": 1,
    "label": "Phone ID",
    "reqd": 1
   },
@@ -128,6 +135,53 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Title"
+  },
+  {
+   "fieldname": "customer_id",
+   "fieldtype": "Link",
+   "label": "Customer ID",
+   "options": "Connectly Customer"
+  },
+  {
+   "fieldname": "phone_number",
+   "fieldtype": "Phone",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Phone Number"
+  },
+  {
+   "fieldname": "audio_settings_tab",
+   "fieldtype": "Tab Break",
+   "label": "Audio Settings"
+  },
+  {
+   "default": "0",
+   "description": "NOTE: Extra charge fees applied.",
+   "fieldname": "allow_stt",
+   "fieldtype": "Check",
+   "label": "Receive Audio Messages"
+  },
+  {
+   "fieldname": "column_break_qzgb",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "NOTE: Extra charge fees applied.",
+   "fieldname": "allow_tts",
+   "fieldtype": "Check",
+   "label": "Reply With Audio"
+  },
+  {
+   "fieldname": "stt_error_message",
+   "fieldtype": "Text",
+   "label": "Audio Message Error Reply"
+  },
+  {
+   "fieldname": "voice_type",
+   "fieldtype": "Select",
+   "label": "Voice Type",
+   "options": "alloy\necho\nfable\nonyx\nnova\nshimmer\ncoral\nverse\nballad\nash\nsage\nmarin\ncedar"
   }
  ],
  "index_web_pages_for_search": 1,
@@ -135,9 +189,17 @@
   {
    "link_doctype": "AI Agent",
    "link_fieldname": "whatsapp_instance"
+  },
+  {
+   "link_doctype": "Ai Chat",
+   "link_fieldname": "whatsapp_instance"
+  },
+  {
+   "link_doctype": "WhatsApp Message Template",
+   "link_fieldname": "instance"
   }
  ],
- "modified": "2025-09-30 17:17:21.260233",
+ "modified": "2025-10-21 13:02:10.450475",
  "modified_by": "Administrator",
  "module": "WhatsApp Integration",
  "name": "WhatsApp Instance",

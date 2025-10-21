@@ -52,10 +52,10 @@
  "links": [
   {
    "link_doctype": "Charge WhatsApp Number",
-   "link_fieldname": "whatsapp_business_account"
+   "link_fieldname": "business_account"
   }
  ],
- "modified": "2025-09-24 12:38:07.543907",
+ "modified": "2025-10-02 13:36:05.681363",
  "modified_by": "Administrator",
  "module": "WhatsApp Integration",
  "name": "WhatsApp Subscription",

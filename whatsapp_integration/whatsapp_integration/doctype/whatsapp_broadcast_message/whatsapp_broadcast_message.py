@@ -5,140 +5,183 @@ import frappe
 from frappe.model.document import Document
 from whatsapp_integration.whatsapp_api import send_message
 import json
+import pandas as pd
+from frappe.utils.file_manager import get_file_path
 
 class WhatsAppBroadcastMessage(Document):
 	def on_submit(self):
 		if self.workflow_state == "Sent":
-			self.send_wa_message()
+			send_bulk_messages(self.name)
+	
+	
+def send_bulk_messages(reference_id):
+	self = frappe.get_doc("WhatsApp Broadcast Message", reference_id)
+	instance = frappe.get_doc("WhatsApp Instance", self.whatsapp_instance)
+	template_name = None
+	template_langauge = None
+	template_components = None
+	latitude =None
+	longitude=None
+	address=None
+	location_name=None
+	image_url=None
+	image_caption=None
 
-	def send_wa_message(self):
-		instance = frappe.get_doc("WhatsApp Instance", self.whatsapp_instance)
-		template_name = None
-		template_langauge = None
-		template_components = None
-		latitude =None
-		longitude=None
-		address=None
-		location_name=None
-		image_url=None
-		image_caption=None
+	
+	if self.message_type.lower() == "template":
+		template = frappe.get_doc("WhatsApp Message Template", self.template)
+		template_name = template.template_name
+		template_langauge = template.language
+		template_components = compose_components(self)
 
-		
-		if self.message_type.lower() == "template":
-			template = frappe.get_doc("WhatsApp Message Template", self.template)
-			template_name = template.template_name
-			template_langauge = template.language
-			template_components = self.compose_components()
+		self.error_message = str(template_components)
 
-			self.error_message = str(template_components)
+	if self.message_type.lower() == "location":
+		coords = json.loads(self.location)["features"][0]["geometry"]["coordinates"]
+		latitude = str(coords[0])
+		longitude = str(coords[1])
+		location_name = self.location_name
+		address = self.address
 
-		if self.message_type.lower() == "location":
-			coords = json.loads(self.location)["features"][0]["geometry"]["coordinates"]
-			latitude = str(coords[0])
-			longitude = str(coords[1])
-			location_name = self.location_name
-			address = self.address
+	if self.message_type.lower() == "image":			
+		image_url=self.image
+		image_caption=self.image_caption
 
-		if self.message_type.lower() == "image":			
-			image_url=self.image
-			image_caption=self.image_caption
+	numbers = [client.number for client in self.numbers if client.number]
 
-				  
-		for client in self.numbers:
-			try:
-				response = send_message(
-					phone_id=instance.phone_id,
-					client_number=client.number,
-					type=self.message_type.lower(),
-					text=self.text,
-					template_name=template_name,
-					template_language=template_langauge,
-					template_components=template_components,
-					latitude = latitude,
-					longitude =longitude,
-					location_name=location_name,
-					address=address,
-					image_url=image_url,
-					image_caption=image_caption,
-				)
+	if self.numbers_source == "Excel" and self.file:
+		file_path = get_file_path(self.file)
+		try:
+			df = pd.read_excel(file_path)
+			if 'number' in df.columns:
+				excel_numbers = df['number'].dropna().astype(str).tolist()
+				numbers.extend(excel_numbers)
+		except Exception as e:
+			frappe.throw(f"Error reading Excel file: {e}")
+
+	numbers = list(set(numbers))
+
+	for number in numbers:
+		try:
+			response = send_message(
+				phone_id=instance.phone_id,
+				client_number=number,
+				type=self.message_type.lower(),
+				text=self.text,
+				template_name=template_name,
+				template_language=template_langauge,
+				template_components=template_components,
+				latitude = latitude,
+				longitude =longitude,
+				location_name=location_name,
+				address=address,
+				image_url=image_url,
+				image_caption=image_caption,
+			)
+			if response.status_code != 200:
 				frappe.throw(str(response.text))
-				if response.status_code != 200:
-					frappe.throw(str(response.text))
 
-					self.append(
-						"error_logs",
-						{
-							"number": client.number, "error": response.text,
-						}
-					)
-			except Exception as e:
-				frappe.throw(str(e))
 				self.append(
 					"error_logs",
 					{
-						"number": client.number, "error": str(e),
+						"number": number, "error": response.text,
 					}
 				)
 
-		
-
-	def compose_components(self):
-		components = []
-
-		## Header Parameters
-		header_components = frappe.get_all(
-			"Message Components Table",
-			filters={"parent": self.name, "section_name": "header"},
-			fields=["type", "text", "file_url", "file_name"],
-			order_by="param_order",
-		)
-		if header_components:
-			components.append({"type": "header", "parameters": []})
-			header_params = components[0]["parameters"]
+			return response
 			
-			for c in header_components:
-				param = {"type": c.type}
+		except Exception as e:
+			frappe.throw(str(e))
+			self.append(
+				"error_logs",
+				{
+					"number": number, "error": str(e),
+				}
+			)
 
-				if c.type == "text":
-					param["text"] = c.text
+		
+def compose_components(self):
+	components = []
 
-				elif c.type == "image":
-					param["image"] = {"link": c.file_url}
+	## Header Parameters
+	header_components = frappe.get_all(
+		"Message Components Table",
+		filters={"parent": self.name, "section_name": "header"},
+		fields=["type", "text", "file_url", "file_name"],
+		order_by="param_order",
+	)
+	if header_components:
+		components.append({"type": "header", "parameters": []})
+		header_params = components[0]["parameters"]
+		
+		for c in header_components:
+			param = {"type": c.type}
 
-				elif c.type == "document":
-					param["document"] = {
-						"link": c.file_url,
-						"filename": c.file_name,
-					}
+			if c.type == "text":
+				param["text"] = c.text
 
-				else:
-					frappe.throw("Header parameter type must be one of: text, image, document")
+			elif c.type == "image":
+				param["image"] = {"link": c.file_url}
 
-				header_params.append(param)
+			elif c.type == "document":
+				param["document"] = {
+					"link": c.file_url,
+					"filename": c.file_name,
+				}
+
+			else:
+				frappe.throw("Header parameter type must be one of: text, image, document")
+
+			header_params.append(param)
 
 
-		## Body parameters
-		body_components = frappe.get_all(
-			"Message Components Table",
-			filters={"parent": self.name, "section_name": "body"},
-			fields=["type", "text"],
-			order_by="param_order",
-		)
-		if body_components:
-			body_comp = {"type": "body", "parameters": []}
-			body_params = body_comp["parameters"]
+	## Body parameters
+	body_components = frappe.get_all(
+		"Message Components Table",
+		filters={"parent": self.name, "section_name": "body"},
+		fields=["type", "text"],
+		order_by="param_order",
+	)
+	if body_components:
+		body_comp = {"type": "body", "parameters": []}
+		body_params = body_comp["parameters"]
 
-			for c in body_components:
-				if c.type != "text":
-					frappe.throw("Body parameters must be type 'text' to match {{n}} placeholders.")
+		for c in body_components:
+			if c.type != "text":
+				frappe.throw("Body parameters must be type 'text' to match {{n}} placeholders.")
 
-				body_params.append({
-					"type": c.type,
-					"text": c.text,
-				})
-			components.append(body_comp)
+			body_params.append({
+				"type": c.type,
+				"text": c.text,
+			})
+		components.append(body_comp)
 
-		return components
+
+	## Buttons parameters
+	button_components = frappe.get_all(
+		"Message Components Table",
+		filters={"parent": self.name, "section_name": "button"},
+		fields=["type", "sub_type", "text"],
+		order_by="param_order",
+	)
+	for idx, c in enumerate(button_components):
+		button_comp = {
+			"type": "button",
+			"sub_type": c.sub_type,
+			"index": str(idx),
+			"parameters": [],
+		}
+		button_params = button_comp["parameters"]
+
+		if c.sub_type == "url":
+			button_params.append({
+				"type": "text",
+				"text": c.text,
+			})
+
+		components.append(body_comp)
+
+	return components
 
 
 @frappe.whitelist(methods=["POST"], allow_guest=True)
@@ -198,6 +241,12 @@ def init_broadcast(
 						new_component["file_url"] = file_url
 						new_component["file_name"] = file_name
 
+					elif param_type == "button":
+						sub_type = p.get("sub_type")
+						file_path = p.get("file_path")
+						new_component["sub_type"] = sub_type
+						new_component["text"] = file_path
+
 					m_broadcast.append(
 						"components",
 						new_component
@@ -217,6 +266,16 @@ def init_broadcast(
 		"reference_id": m_broadcast.name,
 		"message": "Message draft has been created",
 	}
+
+@frappe.whitelist(allow_guest=True)
+def submit_broadcast(reference_id):
+	response = send_bulk_messages(reference_id)
+	
+	# if response.status_code == 200:
+	# 	broadcast = frappe.get_doc("WhatsApp Broadcast Message", reference_id)
+	# 	broadcast.submit()
+
+	return response
 
 
 def file_type(extension):

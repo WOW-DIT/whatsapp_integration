@@ -27,8 +27,12 @@ class WhatsAppRegister(Document):
 		user.email = self.email
 		user.first_name = self.first_name
 		user.last_name = self.last_name
-		user.role_profile_name = "WhatsApp Signup User"
-		user.module_profile = "WhatsApp Manager"
+
+		user.append("roles", {"role": "WhatsApp Signup User"})
+		user.append("roles", {"role": "Instagram Signup User"})
+
+		# user.role_profile_name = "WhatsApp Signup User"
+		user.module_profile = "Connectly Manager"
 		user.send_welcome_email = 1
 		user.insert(ignore_permissions=True)
 		frappe.db.commit()

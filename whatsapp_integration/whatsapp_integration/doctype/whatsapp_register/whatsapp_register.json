@@ -9,6 +9,8 @@
  "field_order": [
   "email",
   "business_name",
+  "customer_type",
+  "tax_id",
   "column_break_70qdq",
   "first_name",
   "last_name"
@@ -44,11 +46,25 @@
    "in_list_view": 1,
    "label": "Last Name",
    "reqd": 1
+  },
+  {
+   "fieldname": "customer_type",
+   "fieldtype": "Select",
+   "label": "Customer Type",
+   "options": "\nIndividual\nCompany",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval: doc.customer_type === \"Company\"",
+   "fieldname": "tax_id",
+   "fieldtype": "Data",
+   "label": "Tax ID",
+   "mandatory_depends_on": "eval: doc.customer_type === \"Company\""
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-01 16:47:19.993894",
+ "modified": "2025-10-09 14:50:36.315355",
  "modified_by": "Administrator",
  "module": "WhatsApp Integration",
  "name": "WhatsApp Register",

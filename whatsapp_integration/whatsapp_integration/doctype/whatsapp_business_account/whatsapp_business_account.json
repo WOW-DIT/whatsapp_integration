@@ -8,6 +8,7 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "customer_id",
   "business_display_name",
   "business_account_id",
   "active"
@@ -35,11 +36,17 @@
    "fieldtype": "Data",
    "label": "Business Display Name",
    "reqd": 1
+  },
+  {
+   "fieldname": "customer_id",
+   "fieldtype": "Link",
+   "label": "Customer ID",
+   "options": "Connectly Customer"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-29 14:23:27.124483",
+ "modified": "2025-10-09 16:28:55.102068",
  "modified_by": "Administrator",
  "module": "WhatsApp Integration",
  "name": "WhatsApp Business Account",

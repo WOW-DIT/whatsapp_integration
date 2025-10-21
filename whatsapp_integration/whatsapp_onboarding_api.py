@@ -6,11 +6,11 @@ import base64
 def signup_webhook():
     pass
 
-
-def init_business_account(business_id, business_name):
+@frappe.whitelist(allow_guest=True)
+def init_business_account(customer_id, business_id, business_name):
     business_accounts = frappe.get_all(
         "WhatsApp Business Account",
-        filters={"business_account_id": business_id},
+        filters={"customer_id": customer_id, "business_account_id": business_id},
         limit=1
     )
     
@@ -18,6 +18,7 @@ def init_business_account(business_id, business_name):
         business_account = frappe.get_doc("WhatsApp Business Account", business_accounts[0].name)
     else:
         business_account = frappe.new_doc("WhatsApp Business Account")
+        business_account.customer_id = customer_id
         business_account.business_account_id = business_id
         business_account.business_display_name = business_name
         business_account.insert(ignore_permissions=True)
@@ -26,8 +27,11 @@ def init_business_account(business_id, business_name):
 
 
 @frappe.whitelist(allow_guest=True)
-def init_instance(code, phone_id, business_id, business_name, email=None):
+def init_instance(code, phone_id, business_id, business_name, email=None, with_mobile_app=False):
     try:
+        user = frappe.get_doc("User", frappe.session.user)
+        customer_id = user.customer_id if user.customer_id else "WOW Digital Information Technology"
+
         insts = frappe.get_all(
             "WhatsApp Instance",
             filters={"phone_id": phone_id, "business_id": business_id},
@@ -38,14 +42,19 @@ def init_instance(code, phone_id, business_id, business_name, email=None):
             instance = frappe.get_doc("WhatsApp Instance", insts[0].name)
 
         else:
-            business_account = init_business_account(business_id, business_name)
+            business_account = init_business_account(customer_id, business_id, business_name)
 
             instance = frappe.new_doc("WhatsApp Instance")
+            instance.customer_id = customer_id
             instance.phone_id = phone_id
+            instance.business_id = business_account.business_account_id
             instance.business_account = business_account.name
 
             if email:
                 instance.user = email
+
+            if with_mobile_app:
+                instance.registered = 1
 
             instance.insert(ignore_permissions=True)
 
@@ -53,8 +62,14 @@ def init_instance(code, phone_id, business_id, business_name, email=None):
             set_user_permission(instance.doctype, instance.name)
 
             user = frappe.get_doc("User", frappe.session.user)
-            user.role_profile_name = "WhatsApp Manager"
-            user.save(ignore_permissions=True)
+            has_role = frappe.db.exists(
+                "Has Role",
+                {"parenttype": "User", "parent": user.name, "role": "WhatsApp Manager"}
+            )
+            if not has_role:
+                # user.role_profile_name = "WhatsApp Manager"
+                user.append("roles", {"role": "WhatsApp Manager"})
+                user.save(ignore_permissions=True)
             
             frappe.db.commit()
 
@@ -107,7 +122,7 @@ def generate_token(code, instance):
         raise Exception("Token generation failed")
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def register_phone_number(instance_id, pin):
     wa_settings = frappe.get_doc("WhatsApp Settings", "WhatsApp Settings")
     instance = frappe.get_doc("WhatsApp Instance", instance_id)
@@ -126,13 +141,36 @@ def register_phone_number(instance_id, pin):
     if response.status_code == 200 or response.status_code == 201:
         data = response.json()
         success = data["success"]
+        frappe.db.set_value(instance.doctype, instance.name, "registered", 1, update_modified=False)
 
         return {"success": success, "message": "WhatsApp phone number registered successfully."}        
     else:
         return {"success": False, "error": response.text, "status": response.status_code}
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
+def deregister_phone_number(instance_id):
+    wa_settings = frappe.get_doc("WhatsApp Settings", "WhatsApp Settings")
+    instance = frappe.get_doc("WhatsApp Instance", instance_id)
+    token = instance.get_password("token")
+
+    url = f"https://graph.facebook.com/{wa_settings.api_version}/{instance.phone_id}/deregister"
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+    
+    response = requests.post(url, headers=headers)
+    if response.status_code == 200 or response.status_code == 201:
+        data = response.json()
+        success = data["success"]
+        frappe.db.set_value(instance.doctype, instance.name, "registered", 0, update_modified=False)
+
+        return {"success": success, "message": "WhatsApp phone number deregistered successfully."}        
+    else:
+        return {"success": False, "error": response.text, "status": response.status_code}
+
+
+@frappe.whitelist()
 def subscribe_business_account(instance_id):
     ## Get whatsapp settings (api_version, app_id, app_secret, etc...)
     wa_settings = frappe.get_doc("WhatsApp Settings", "WhatsApp Settings")
@@ -162,6 +200,44 @@ def subscribe_business_account(instance_id):
         success = data["success"]
 
         business_account.active = 1
+        business_account.save(ignore_permissions=True)
+        frappe.db.commit()
+
+        return {"success": success, "message": "WABA has been subscribed successfully."}        
+    else:
+        return {"success": False, "error": response.text}
+    
+
+@frappe.whitelist()
+def unsubscribe_business_account(instance_id):
+    ## Get whatsapp settings (api_version, app_id, app_secret, etc...)
+    wa_settings = frappe.get_doc("WhatsApp Settings", "WhatsApp Settings")
+
+    ## Client Number ID
+    instance = frappe.get_doc("WhatsApp Instance", instance_id)
+    business_account = frappe.get_doc("WhatsApp Business Account", instance.business_id)
+
+    ## Client Number Token
+    token = instance.get_password("token")
+
+    ## API endpoint
+    url = f"https://graph.facebook.com/{wa_settings.api_version}/{instance.business_id}/subscribed_apps"
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+
+    ## Send Request to API
+    response = requests.delete(url, headers=headers)
+
+    ## response.status_code == 200 -> Success
+    ## response.status_code != 200 -> Failure
+    if response.status_code == 200 or response.status_code == 201:
+        ## Response Data
+        data = response.json()
+        
+        success = data["success"]
+
+        business_account.active = 0
         business_account.save(ignore_permissions=True)
         frappe.db.commit()
 

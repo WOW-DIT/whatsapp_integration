@@ -75,11 +75,11 @@ def send_live_message(chat_id: str, message_type: str, text: str):
 	try:
 		chat = frappe.get_doc("Ai Chat", chat_id)
 		# instance = frappe.get_doc("WhatsApp Instance", instance_id)
-		client_number = chat.whatsapp_client_id
+		client_number = chat.user_id
 
 		response = send_message(
 			phone_id=chat.phone_id,
-			client_number=chat.whatsapp_client_id,
+			client_number=client_number,
 			type=message_type,
 			text=text,
 		)
@@ -111,7 +111,11 @@ def send_live_message(chat_id: str, message_type: str, text: str):
 
 			chat.append(
 				"messages",
-				{"message": msg.name}
+				{
+					"role": msg.role,
+					"message_text": msg.message_text,
+					"content": msg.content,
+				}
 			)
 			chat.save(ignore_permissions=True)
 			

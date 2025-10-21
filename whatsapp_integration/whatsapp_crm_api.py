@@ -7,9 +7,8 @@ import requests
 def create_customer(mobile_number, customer_name, email=None, gender=None, national_id=None, test=False):
     if test:
         return None
-    
-    chats = frappe.get_all("Ai Chat", filters={"whatsapp_client_id": mobile_number})
-    if chats:
+        
+    if not frappe.db.exists("Ai Chat", {"user_id": mobile_number}):
         frappe.response["message"] = {"success": False, "error": "Chat not found"}
         
     else:
@@ -26,7 +25,7 @@ def create_customer(mobile_number, customer_name, email=None, gender=None, natio
             customer.tax_id = national_id
             customer.insert(ignore_permissions=True)
             
-            frappe.response["message"] = {"success": True}
+            frappe.response["message"] = {"success": True, "message": "Customer registered successfully"}
         
         except Exception as e:
             frappe.response["message"] = {"success": False, "error": str(e)}
