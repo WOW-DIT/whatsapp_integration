@@ -12,7 +12,7 @@
  "is_hidden": 0,
  "label": "WhatsApp Admin",
  "links": [],
- "modified": "2025-10-01 16:06:53.225985",
+ "modified": "2025-10-22 09:48:24.287365",
  "modified_by": "Administrator",
  "module": "WhatsApp Integration",
  "name": "WhatsApp Admin",
@@ -26,7 +26,7 @@
    "role": "Administrator"
   }
  ],
- "sequence_id": 33.0,
+ "sequence_id": 34.0,
  "shortcuts": [
   {
    "color": "Grey",

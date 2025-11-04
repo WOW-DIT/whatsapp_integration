@@ -59,7 +59,7 @@ def get_messages(chat_id, page=1):
 		page_size = 50
 		messages = frappe.get_list(
 			"Ai Message",
-			filters={"chat": chat_id},
+			filters={"chat": chat_id, "response_type": "Normal"},
 			fields=["name", "role", "type", "message_text", "image", "timestamp"],
 			order_by="timestamp",
 			limit=page_size * page,

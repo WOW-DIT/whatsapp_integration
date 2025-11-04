@@ -6,7 +6,7 @@ import base64
 def signup_webhook():
     pass
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def init_business_account(customer_id, business_id, business_name):
     business_accounts = frappe.get_all(
         "WhatsApp Business Account",
@@ -26,7 +26,7 @@ def init_business_account(customer_id, business_id, business_name):
     return business_account
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def init_instance(code, phone_id, business_id, business_name, email=None, with_mobile_app=False):
     try:
         user = frappe.get_doc("User", frappe.session.user)

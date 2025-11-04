@@ -2,11 +2,14 @@ import frappe
 from werkzeug.wrappers import Response
 from datetime import datetime
 from ai_intergration.ai_intergration.api import ai_chat, speech_to_text, text_to_speech
+from ai_intergration.ai_intergration.api_v2 import ai_chat_v2, speech_to_text, text_to_speech
 import requests
 import json
 from io import BytesIO
 import uuid
 import os
+import hashlib
+import hmac
 
 @frappe.whitelist()
 def get_wa_token(phone_id):
@@ -110,7 +113,26 @@ def whatsapp_webhook():
             return Response(str(challenge), mimetype='text/plain')
         
     else:
+        wa_settings = frappe.get_doc("WhatsApp Settings", "WhatsApp Settings")
         try:
+            raw_body = frappe.request.data
+
+            # Get the signature from headers
+            received_sig = frappe.get_request_header("X-Hub-Signature-256")
+
+            # Compute expected signature
+            app_secret = wa_settings.get_password("app_secret")
+            expected_sig = "sha256=" + hmac.new(
+                key=app_secret.encode("utf-8"),
+                msg=raw_body,
+                digestmod=hashlib.sha256
+            ).hexdigest()
+
+            if not hmac.compare_digest(received_sig, expected_sig):
+                frappe.log_error("Invalid WhatsApp webhook signature")
+                frappe.throw("Invalid signature", frappe.PermissionError)
+
+
             raw_data = frappe.request.get_data(as_text=True)
             json_data = json.loads(raw_data)
 
@@ -177,7 +199,6 @@ def whatsapp_webhook():
 
 
                 if messages:
-                    wa_settings = frappe.get_doc("WhatsApp Settings", "WhatsApp Settings")
                     api_version = wa_settings.api_version
 
                     wa_instances = frappe.get_all(
@@ -199,7 +220,7 @@ def whatsapp_webhook():
                     from_number = messages[0]["from"]
                     to_number = value["contacts"][0]["wa_id"]
                     try:
-                        client_subscription = get_sub(wa_instance.business_account)
+                        client_subscription = get_sub(wa_instance.customer_id)
                         if client_subscription is None:
                             error_message = str(wa_instance.error_message).strip() if wa_instance.error_message else ""
                             if error_message:
@@ -210,11 +231,11 @@ def whatsapp_webhook():
                         sub_id = client_subscription.name
                         enough_balance = has_enough_balance(sub_id)
 
-                        converted_audio_to_text = False
-                        converted_text_to_audio = False
-
                         if not enough_balance:
                             return
+
+                        converted_audio_to_text = False
+                        converted_text_to_audio = False
 
                         for msg in messages:
                             timestamp = datetime.fromtimestamp(float(msg["timestamp"]))
@@ -332,20 +353,38 @@ def whatsapp_webhook():
 
                                 model = get_model(context)
 
-                                ai_response = ai_chat(
-                                    model=model,
-                                    chat_id=chat.name,
-                                    message_type=message_type,
-                                    new_message={
-                                        "role": "user",
-                                        "content": f"({from_number}) says: {msg_body}",
-                                    },
-                                    plain_text=msg_body,
-                                    image=image,
-                                    to_account=to_number,
-                                    timestamp=timestamp,
-                                    stream=False,
-                                )
+                                if wa_instance.v2:
+                                    ai_response = ai_chat_v2(
+                                        model=model,
+                                        chat_id=chat.name,
+                                        message_type=message_type,
+                                        new_message={
+                                            "role": "user",
+                                            "content": f"({from_number}) says: {msg_body}",
+                                        },
+                                        plain_text=msg_body,
+                                        image=image,
+                                        to_account=to_number,
+                                        timestamp=timestamp,
+                                        stream=False,
+                                        context=context,
+                                    )
+                                else:
+                                    ai_response = ai_chat(
+                                        model=model,
+                                        chat_id=chat.name,
+                                        message_type=message_type,
+                                        new_message={
+                                            "role": "user",
+                                            "content": f"({from_number}) says: {msg_body}",
+                                        },
+                                        plain_text=msg_body,
+                                        image=image,
+                                        to_account=to_number,
+                                        timestamp=timestamp,
+                                        stream=False,
+                                        context=context,
+                                    )
 
                                 if not ai_response:
                                     error_msg = context.on_error if context.on_error else "عذرا لم أفهم، ممكن تكرر الطلب من فضلك."
@@ -419,7 +458,7 @@ def whatsapp_webhook():
                                         
                                         spent = spend_balance(sub_id, number_of_points)
 
-                                    if response_type == "text":
+                                    if response_type == "text" or wa_instance.v2:
                                         return
                                     
                                     if response_type == "document":
@@ -640,7 +679,7 @@ def upload_file_full(api_version: str, app_id: str, access_token: str, file_path
 
 def has_enough_balance(sub_id):
     balance = frappe.db.get_value(
-        "WhatsApp Subscription",
+        "Connectly Subscription",
         sub_id,
         "balance"
     )
@@ -651,15 +690,17 @@ def has_enough_balance(sub_id):
 
 def spend_balance(sub_id, number_of_points=1):
     try:
+        last_balance = frappe.db.get_value(
+            "Connectly Subscription",
+            sub_id,
+            "balance"
+        )
+
         frappe.db.set_value(
-            "WhatsApp Subscription",
+            "Connectly Subscription",
             sub_id,
             "balance",
-            (frappe.db.get_value(
-                "WhatsApp Subscription",
-                sub_id,
-                "balance"
-            ) - number_of_points),
+            (last_balance - number_of_points),
             update_modified=False,
         )
         return True
@@ -679,19 +720,15 @@ def calculate_deducted_balance(wa_settings, converted_audio_to_text, converted_t
     return number_of_points
 
 
-def get_sub(business_account):
+def get_sub(customer_id):
     try:
-        # today = datetime.now().date()
-        # today_str = today.strftime("%Y-%m-%d")
-
         subs = frappe.get_all(
-            "WhatsApp Subscription",
-            filters={"business_account": business_account, "enabled": 1},
-            fields=["name"],
+            "Connectly Subscription",
+            filters={"name": customer_id, "enabled": 1},
             limit=1,
         )
         if subs:
-            sub = frappe.get_doc("WhatsApp Subscription", subs[0].name)
+            sub = frappe.get_doc("Connectly Subscription", subs[0].name)
             return sub
         
         return None
@@ -703,7 +740,7 @@ def get_ai_context(instance_id):
     ai_contexts = frappe.get_all(
         "AI Agent",
         filters={"whatsapp_instance": instance_id},
-        fields=["name", "llm", "default_model", "gpt_model", "override_model", "client_credentials", "on_error"],
+        fields=["*"],
         limit=1,
     )
 
@@ -718,7 +755,7 @@ def get_chat(instance_id, from_user, ai_context):
     chats = frappe.get_all(
         "Ai Chat",
         filters={
-            "context": ai_context.name,
+            "whatsapp_instance": instance_id,
             "user_id": from_user,
         },
         fields=["name", "model"]

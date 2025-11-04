@@ -11,6 +11,7 @@
   "user",
   "enabled",
   "registered",
+  "v2",
   "column_break_5mjyx",
   "customer_id",
   "business_account",
@@ -182,6 +183,12 @@
    "fieldtype": "Select",
    "label": "Voice Type",
    "options": "alloy\necho\nfable\nonyx\nnova\nshimmer\ncoral\nverse\nballad\nash\nsage\nmarin\ncedar"
+  },
+  {
+   "default": "0",
+   "fieldname": "v2",
+   "fieldtype": "Check",
+   "label": "V2"
   }
  ],
  "index_web_pages_for_search": 1,
@@ -199,7 +206,7 @@
    "link_fieldname": "instance"
   }
  ],
- "modified": "2025-10-21 13:02:10.450475",
+ "modified": "2025-10-22 15:46:33.936014",
  "modified_by": "Administrator",
  "module": "WhatsApp Integration",
  "name": "WhatsApp Instance",

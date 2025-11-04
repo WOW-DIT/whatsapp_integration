@@ -4,7 +4,7 @@ const style = `
 	#preview_background {
 		display: flex;
 		width: 100%;
-		background-color: green;
+		background-color: #acacacff;
 		padding: 20px;
 	}
 	#message {

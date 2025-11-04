@@ -259,5 +259,5 @@ function deregister_phone_number(frm) {
 function reload_page(){
     setTimeout(() => {
         location.reload();
-    }, 3000);
+    }, 2000);
 }

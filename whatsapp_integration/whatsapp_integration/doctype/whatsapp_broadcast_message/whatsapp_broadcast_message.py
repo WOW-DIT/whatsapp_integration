@@ -78,8 +78,9 @@ def send_bulk_messages(reference_id):
 				image_url=image_url,
 				image_caption=image_caption,
 			)
+
 			if response.status_code != 200:
-				frappe.throw(str(response.text))
+				raise Exception(str(response.text))
 
 				self.append(
 					"error_logs",
@@ -88,7 +89,7 @@ def send_bulk_messages(reference_id):
 					}
 				)
 
-			return response
+			return response.json()
 			
 		except Exception as e:
 			frappe.throw(str(e))
@@ -179,7 +180,7 @@ def compose_components(self):
 				"text": c.text,
 			})
 
-		components.append(body_comp)
+		components.append(button_comp)
 
 	return components
 
