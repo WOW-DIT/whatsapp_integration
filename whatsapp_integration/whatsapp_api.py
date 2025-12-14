@@ -54,6 +54,7 @@ def send_message(
             token=token,
             to_number=client_number,
             text=text,
+            direct_call=False,
         )
         
     elif type == "template":
@@ -65,6 +66,7 @@ def send_message(
             template_name=template_name,
             language_code=template_language,
             components=template_components,
+            direct_call=False,
         )
 
     elif type == "location":
@@ -77,6 +79,7 @@ def send_message(
             longitude=longitude,
             name=location_name,
             address=address,
+            direct_call=False,
         )
 
     elif type == "image":
@@ -86,7 +89,8 @@ def send_message(
             token=token,
             to_number=client_number,
             url=image_url,
-            image_caption=image_caption
+            image_caption=image_caption,
+            direct_call=False,
         )
             
 
@@ -297,6 +301,7 @@ def whatsapp_webhook():
                                         token=token,
                                         to_number=to_number,
                                         text=stt_error,
+                                        direct_call=False,
                                     )
                                     return
 
@@ -337,6 +342,7 @@ def whatsapp_webhook():
                                         token=token,
                                         to_number=to_number,
                                         text=f"image error: {e}",
+                                        direct_call=False,
                                     )
                                     return
                             else:
@@ -427,6 +433,7 @@ def whatsapp_webhook():
                                                 token=token,
                                                 to_number=to_number,
                                                 file_link=audio_file_link,
+                                                direct_call=False,
                                             )
 
                                         ## Return to default response content type (text)
@@ -437,6 +444,7 @@ def whatsapp_webhook():
                                                 token=token,
                                                 to_number=to_number,
                                                 text=response_text,
+                                                direct_call=False,
                                             )
 
                                     ## Default (Send text)
@@ -447,6 +455,7 @@ def whatsapp_webhook():
                                             token=token,
                                             to_number=to_number,
                                             text=response_text,
+                                            direct_call=False,
                                         )
 
                                     if wa_message.status_code == 200:
@@ -469,6 +478,7 @@ def whatsapp_webhook():
                                             to_number=to_number,
                                             file_link=file_link,
                                             caption=caption,
+                                            direct_call=False,
                                         )
 
                                     if response_type == "image":
@@ -479,6 +489,7 @@ def whatsapp_webhook():
                                             to_number=to_number,
                                             file_link=file_link,
                                             image_caption=caption,
+                                            direct_call=False,
                                         )
 
                                     if wa_message.status_code == 200:
@@ -498,6 +509,7 @@ def whatsapp_webhook():
                                     token=token,
                                     to_number=to_number,
                                     text=str(e),
+                                    direct_call=False,
                                 )
                         
                                 frappe.db.commit()
@@ -512,6 +524,7 @@ def whatsapp_webhook():
                             token=token,
                             to_number=to_number,
                             text=str(e),
+                            direct_call=False,
                         )
                         return None
                 
@@ -787,7 +800,14 @@ def get_model(ai_context):
     return model
 
 
-def send_whatsapp_response(version, phone_id, token, to_number, text):
+def send_whatsapp_response(
+    version,
+    phone_id,
+    token,
+    to_number,
+    text,
+    direct_call=True,
+):
     url = f"https://graph.facebook.com/{version}/{phone_id}/messages"
     body = {
         "messaging_product": "whatsapp",
@@ -803,9 +823,23 @@ def send_whatsapp_response(version, phone_id, token, to_number, text):
     }
     response = requests.post(url, json=body, headers=headers)
 
+    if direct_call:
+        frappe.response["success"] = response.status_code == 200
+
     return response
 
-def send_whatsapp_location(version, phone_id, token, to_number, latitude, longitude, name, address):
+
+def send_whatsapp_location(
+    version,
+    phone_id,
+    token,
+    to_number,
+    latitude,
+    longitude,
+    name,
+    address,
+    direct_call=True,
+):
     url = f"https://graph.facebook.com/{version}/{phone_id}/messages"
     body = {
         "messaging_product": "whatsapp",
@@ -826,7 +860,11 @@ def send_whatsapp_location(version, phone_id, token, to_number, latitude, longit
     }
     response = requests.post(url, json=body, headers=headers)
 
+    if direct_call:
+        frappe.response["success"] = response.status_code == 200
+
     return response
+
 
 def send_whatsapp_template(
     version,
@@ -836,6 +874,7 @@ def send_whatsapp_template(
     template_name,
     language_code,
     components=None,
+    direct_call=True,
 ):
     url = f"https://graph.facebook.com/{version}/{phone_id}/messages"
     body = {
@@ -854,10 +893,13 @@ def send_whatsapp_template(
     }
     response = requests.post(url, json=body, headers=headers)
 
+    if direct_call:
+        frappe.response["success"] = response.status_code == 200
+
     return response
 
 
-def send_whatsapp_image(version, phone_id, token, to_number, url, image_caption):
+def send_whatsapp_image(version, phone_id, token, to_number, url, image_caption, direct_call=True):
     mime_type = get_mime_type(url.split(".")[-1])
     media = upload_media(
         mime_type=mime_type,
@@ -883,10 +925,14 @@ def send_whatsapp_image(version, phone_id, token, to_number, url, image_caption)
         "Authorization": f"Bearer {token}"
     }
     response = requests.post(url, json=body, headers=headers)
+
+    if direct_call:
+        frappe.response["success"] = response.status_code == 200
+
     return response
 
 
-def send_whatsapp_image_link(version, phone_id, token, to_number, file_link, caption):
+def send_whatsapp_image_link(version, phone_id, token, to_number, file_link, caption, direct_call=True):
     url = f"https://graph.facebook.com/{version}/{phone_id}/messages"
     body = {
         "messaging_product": "whatsapp",
@@ -903,9 +949,15 @@ def send_whatsapp_image_link(version, phone_id, token, to_number, file_link, cap
         "Authorization": f"Bearer {token}"
     }
     response = requests.post(url, json=body, headers=headers)
+
+    if direct_call:
+        frappe.response["success"] = response.status_code == 200
+
+
     return response
 
-def send_whatsapp_document(version, phone_id, token, to_number, url, caption):
+
+def send_whatsapp_document(version, phone_id, token, to_number, url, caption, direct_call=True):
     mime_type = get_mime_type(url.split(".")[-1])
     media = upload_media(
         mime_type=mime_type,
@@ -931,10 +983,15 @@ def send_whatsapp_document(version, phone_id, token, to_number, url, caption):
         "Authorization": f"Bearer {token}"
     }
     response = requests.post(url, json=body, headers=headers)
+    
+    if direct_call:
+        frappe.response["success"] = response.status_code == 200
+
     return response
 
 
-def send_whatsapp_document_link(version, phone_id, token, to_number, file_link, caption):
+@frappe.whitelist(allow_guest=True)
+def send_whatsapp_document_link(version, phone_id, token, to_number, file_link, caption="", direct_call=True):
     url = f"https://graph.facebook.com/{version}/{phone_id}/messages"
     body = {
         "messaging_product": "whatsapp",
@@ -952,10 +1009,14 @@ def send_whatsapp_document_link(version, phone_id, token, to_number, file_link, 
         "Authorization": f"Bearer {token}"
     }
     response = requests.post(url, json=body, headers=headers)
+
+    if direct_call:
+        frappe.response["success"] = response.status_code == 200
+    
     return response
 
 
-def send_whatsapp_audio(version, phone_id, token, to_number, url):
+def send_whatsapp_audio(version, phone_id, token, to_number, url, direct_call=True):
     mime_type = get_mime_type(url.split(".")[-1])
     media = upload_media(
         mime_type=mime_type,
@@ -980,10 +1041,14 @@ def send_whatsapp_audio(version, phone_id, token, to_number, url):
         "Authorization": f"Bearer {token}"
     }
     response = requests.post(url, json=body, headers=headers)
+
+    if direct_call:
+        frappe.response["success"] = response.status_code == 200
+
     return response
 
 
-def send_whatsapp_audio_link(version, phone_id, token, to_number, file_link):
+def send_whatsapp_audio_link(version, phone_id, token, to_number, file_link, direct_call=True):
     url = f"https://graph.facebook.com/{version}/{phone_id}/messages"
     body = {
         "messaging_product": "whatsapp",
@@ -999,6 +1064,10 @@ def send_whatsapp_audio_link(version, phone_id, token, to_number, file_link):
         "Authorization": f"Bearer {token}"
     }
     response = requests.post(url, json=body, headers=headers)
+
+    if direct_call:
+        frappe.response["success"] = response.status_code == 200
+
     return response
 
 
