@@ -1,0 +1,93 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-12-23 11:19:27.831518",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "whatsapp_instance",
+  "column_break_ilgb",
+  "customer_id",
+  "section_break_vgrf",
+  "integration",
+  "webhook_url",
+  "auth_type",
+  "api_key"
+ ],
+ "fields": [
+  {
+   "fieldname": "whatsapp_instance",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "WhatsApp Instance",
+   "options": "WhatsApp Instance",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "integration",
+   "fieldtype": "Check",
+   "label": "Integration"
+  },
+  {
+   "depends_on": "eval: doc.integration === 1",
+   "fieldname": "webhook_url",
+   "fieldtype": "Text",
+   "label": "Webhook URL",
+   "mandatory_depends_on": "eval: doc.integration === 1"
+  },
+  {
+   "depends_on": "eval: doc.integration === 1",
+   "fieldname": "auth_type",
+   "fieldtype": "Select",
+   "label": "Auth Type",
+   "options": "Bearer\nBasic\nToken"
+  },
+  {
+   "depends_on": "eval: doc.integration === 1",
+   "fieldname": "api_key",
+   "fieldtype": "Password",
+   "label": "API Key"
+  },
+  {
+   "fieldname": "column_break_ilgb",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "whatsapp_instance.customer_id",
+   "fieldname": "customer_id",
+   "fieldtype": "Link",
+   "label": "Customer ID",
+   "options": "Connectly Customer",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_vgrf",
+   "fieldtype": "Section Break"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-12-23 11:23:34.230937",
+ "modified_by": "Administrator",
+ "module": "WhatsApp Integration",
+ "name": "WhatsApp Interactive Template",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

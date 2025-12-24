@@ -345,7 +345,17 @@ def whatsapp_webhook():
                                         direct_call=False,
                                     )
                                     return
-                            else:
+                            elif message_type == "interactive":
+                                interactive_template = get_interactive_template(instance_id=wa_instance.name)
+                                if interactive_template and interactive_template.integration == 1:
+                                    interactive_body = {
+                                        "whatsapp_instance_id": wa_instance.name,
+                                        "user_number": to_number,
+                                        "interactive": msg.get("interactive")
+                                    }
+                                    send_interactive_webhook(interactive_template, interactive_body)
+                                    # save_response_log(str(rrr), "babababa", "babababa")
+                                
                                 return
 
                             from_number = msg["from"]
@@ -538,6 +548,36 @@ def whatsapp_webhook():
             )
             return None
 
+
+def get_interactive_template(instance_id):
+    interactive_temp_id = frappe.get_value(
+        "WhatsApp Interactive Template",
+        {"whatsapp_instance": instance_id},
+    )
+
+    if interactive_temp_id:
+        interactive_temp = frappe.get_doc("WhatsApp Interactive Template", interactive_temp_id)
+        return interactive_temp
+    else:
+        return None
+    
+
+def send_interactive_webhook(interactive_template, body: dict):
+    try:
+        url = interactive_template.webhook_url
+        api_key = interactive_template.get_password("api_key")
+        auth_type = interactive_template.auth_type
+
+        headers = {}
+        # if api_key:
+        #     headers["Authorization"] = f"{auth_type} {api_key}"
+
+        response = requests.post(url, headers=headers, json=body)
+
+        return response.text
+    
+    except Exception as e:
+        return str(e)
 
 def update_template(template_id: str, status: str):
     try:
@@ -825,7 +865,8 @@ def send_whatsapp_response(
 
     if direct_call:
         frappe.response["success"] = response.status_code == 200
-
+        return response.json()
+    
     return response
 
 
@@ -862,7 +903,8 @@ def send_whatsapp_location(
 
     if direct_call:
         frappe.response["success"] = response.status_code == 200
-
+        return response.json()
+    
     return response
 
 
@@ -895,6 +937,111 @@ def send_whatsapp_template(
 
     if direct_call:
         frappe.response["success"] = response.status_code == 200
+        return response.json()
+    
+    return response
+
+
+def send_whatsapp_interactive(
+    version,
+    phone_id,
+    token,
+    to_number,
+    header_text,
+    body_text,
+    footer_text,
+    button_text,
+    sections,
+    direct_call=True,
+):
+    url = f"https://graph.facebook.com/{version}/{phone_id}/messages"
+    body = {
+        "messaging_product": "whatsapp",
+        "recipient_type": "individual",
+        "to": to_number,
+        "type": "interactive",
+        "interactive": {
+            "type": "list",
+            "header": {
+                "type": "text",
+                "text": header_text
+            },
+            "body": {
+                "text": body_text
+            },
+            "footer": {
+                "text": footer_text,
+            },
+            "action": {
+                "button": button_text,
+                "sections": sections,
+            }
+        }
+    }
+
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+    response = requests.post(url, json=body, headers=headers)
+
+    if direct_call:
+        frappe.response["success"] = response.status_code == 200
+        return response.json()
+
+    return response
+
+
+@frappe.whitelist(methods=["POST"])
+def send_whatsapp_interactive_standalone(
+    instance_id,
+    to_number,
+    header_text,
+    body_text,
+    footer_text,
+    button_text,
+    sections,
+    direct_call=True,
+):
+    wa_settings = frappe.get_doc("WhatsApp Settings", "WhatsApp Settings")
+    version = wa_settings.api_version
+
+    wa_instance = frappe.get_doc("WhatsApp Instance", instance_id)
+    phone_id = wa_instance.phone_id
+    token = wa_instance.get_password("token")
+
+    url = f"https://graph.facebook.com/{version}/{phone_id}/messages"
+    body = {
+        "messaging_product": "whatsapp",
+        "recipient_type": "individual",
+        "to": to_number,
+        "type": "interactive",
+        "interactive": {
+            "type": "list",
+            "header": {
+                "type": "text",
+                "text": header_text
+            },
+            "body": {
+                "text": body_text
+            },
+            "footer": {
+                "text": footer_text,
+            },
+            "action": {
+                "button": button_text,
+                "sections": sections,
+            }
+        }
+    }
+
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+    response = requests.post(url, json=body, headers=headers)
+
+    if direct_call:
+        frappe.response["success"] = response.status_code == 200
+        return response.json()
 
     return response
 
@@ -928,7 +1075,8 @@ def send_whatsapp_image(version, phone_id, token, to_number, url, image_caption,
 
     if direct_call:
         frappe.response["success"] = response.status_code == 200
-
+        return response.json()
+    
     return response
 
 
@@ -952,7 +1100,7 @@ def send_whatsapp_image_link(version, phone_id, token, to_number, file_link, cap
 
     if direct_call:
         frappe.response["success"] = response.status_code == 200
-
+        return response.json()
 
     return response
 
@@ -986,7 +1134,8 @@ def send_whatsapp_document(version, phone_id, token, to_number, url, caption, di
     
     if direct_call:
         frappe.response["success"] = response.status_code == 200
-
+        return response.json()
+    
     return response
 
 
@@ -1012,6 +1161,7 @@ def send_whatsapp_document_link(version, phone_id, token, to_number, file_link, 
 
     if direct_call:
         frappe.response["success"] = response.status_code == 200
+        return response.json()
     
     return response
 
@@ -1044,7 +1194,8 @@ def send_whatsapp_audio(version, phone_id, token, to_number, url, direct_call=Tr
 
     if direct_call:
         frappe.response["success"] = response.status_code == 200
-
+        return response.json()
+    
     return response
 
 
@@ -1067,7 +1218,8 @@ def send_whatsapp_audio_link(version, phone_id, token, to_number, file_link, dir
 
     if direct_call:
         frappe.response["success"] = response.status_code == 200
-
+        return response.json()
+    
     return response
 
 
